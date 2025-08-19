@@ -135,23 +135,6 @@
             font-size: 12px;
         }
         
-        .legend {
-            position: absolute;
-            bottom: 80px;
-            left: 20px;
-            z-index: 1000;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 12px;
-            border-radius: 8px;
-            font-size: 11px;
-            max-width: 200px;
-        }
-        
-        .legend h4 {
-            margin: 0 0 8px 0;
-            font-size: 12px;
-        }
         
         .precision-notice {
             position: absolute;
@@ -355,31 +338,6 @@
             opacity: 1;
         }
         
-        /* Station toggle control */
-        .station-toggle {
-            position: absolute;
-            bottom: 160px;
-            left: 20px;
-            z-index: 1000;
-            background: rgba(0,0,0,0.8);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        
-        .station-toggle:hover {
-            background: rgba(0,0,0,0.9);
-            transform: translateY(-1px);
-        }
-        
-        .station-toggle.active {
-            background: rgba(31, 119, 180, 0.9);
-        }
         
         /* Cuisine-specific marker colors using CSS filters */
         .marker-icon.cuisine-japanese { filter: hue-rotate(0deg) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
@@ -687,6 +645,18 @@
             cursor: pointer;
             color: #666;
         }
+
+        .filter-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .filter-row:last-child {
+            margin-bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -709,8 +679,45 @@
         <div class="settings-content">
             <div class="setting-item">
                 <div class="setting-label">🚇 Show Transport Stations</div>
-                <div class="setting-description">Display tube and train stations in London</div>
+                <div class="setting-description">Display tube and train stations in London (129 stations, zones 1-3)</div>
                 <div class="toggle-switch active" id="stationToggleMenu" onclick="toggleStationsSetting()"></div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">🏷️ Restaurant Labels</div>
+                <div class="setting-description">Show restaurant names on markers at medium/high zoom levels</div>
+                <div class="toggle-switch active" id="labelsToggle" onclick="toggleRestaurantLabels()"></div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">🍽️ Cuisine Filters</div>
+                <div class="setting-description">Show/hide restaurants by cuisine type</div>
+                <div class="cuisine-filters" style="margin-top: 12px;">
+                    <div class="filter-row">
+                        <span style="color: #dc3545;">●</span> Japanese/Chinese
+                        <div class="toggle-switch active" id="japaneseToggle" onclick="toggleCuisineFilter('japanese')"></div>
+                    </div>
+                    <div class="filter-row">
+                        <span style="color: #28a745;">●</span> Italian
+                        <div class="toggle-switch active" id="italianToggle" onclick="toggleCuisineFilter('italian')"></div>
+                    </div>
+                    <div class="filter-row">
+                        <span style="color: #0d6efd;">●</span> British
+                        <div class="toggle-switch active" id="britishToggle" onclick="toggleCuisineFilter('british')"></div>
+                    </div>
+                    <div class="filter-row">
+                        <span style="color: #ffc107;">●</span> Indian
+                        <div class="toggle-switch active" id="indianToggle" onclick="toggleCuisineFilter('indian')"></div>
+                    </div>
+                    <div class="filter-row">
+                        <span style="color: #6610f2;">●</span> French
+                        <div class="toggle-switch active" id="frenchToggle" onclick="toggleCuisineFilter('french')"></div>
+                    </div>
+                    <div class="filter-row">
+                        <span style="color: #0dcaf0;">●</span> American
+                        <div class="toggle-switch active" id="americanToggle" onclick="toggleCuisineFilter('american')"></div>
+                    </div>
+                </div>
             </div>
             
             <div class="setting-item">
@@ -720,16 +727,11 @@
             </div>
             
             <div class="setting-item">
-                <div class="setting-label">🏷️ Restaurant Labels</div>
-                <div class="setting-description">Show restaurant names on markers at high zoom</div>
-                <div class="toggle-switch active" id="labelsToggle" onclick="toggleRestaurantLabels()"></div>
-            </div>
-            
-            <div class="setting-item">
                 <div class="setting-label">🎨 Marker Style</div>
-                <div class="setting-description">Using custom nd-pin.svg markers</div>
+                <div class="setting-description">Using custom nd-pin.svg markers with cuisine-based colors</div>
                 <div style="font-size: 12px; color: #999; margin-top: 8px;">
-                    Drop SVG files in assets/svg/ folder to customize
+                    📁 Drop SVG files in assets/svg/ folder to customize<br>
+                    🎨 Colors applied using CSS hue-rotate filters
                 </div>
             </div>
         </div>
@@ -761,25 +763,7 @@
         Showing 276 restaurants in London
     </div>
     
-    <div class="legend">
-        <h4>🍽️ Off Menu Restaurants</h4>
-        <div>• 667 celebrity recommendations</div>
-        <div>• Global dining destinations</div>
-        <div>• Click for details & navigation</div>
-        <div style="margin-top: 8px; font-size: 10px;">
-            <div><span style="color: #dc3545;">●</span> Japanese/Chinese</div>
-            <div><span style="color: #28a745;">●</span> Italian</div>
-            <div><span style="color: #0d6efd;">●</span> British</div>
-            <div><span style="color: #ffc107;">●</span> Indian</div>
-            <div><span style="color: #6610f2;">●</span> French</div>
-            <div><span style="color: #0dcaf0;">●</span> American</div>
-            <div style="margin-top: 4px;"><span style="color: #1f77b4;">■</span> Tube/Train Stations (London)</div>
-        </div>
-    </div>
     
-    <button class="station-toggle active" id="stationToggle" onclick="toggleStations()">
-        🚇 Hide Stations
-    </button>
     
     
     <!-- Restaurant overlay (hidden by default) -->
@@ -13239,14 +13223,11 @@
         
         function toggleStationsSetting() {
             const toggle = document.getElementById('stationToggleMenu');
-            const stationBtn = document.getElementById('stationToggle');
             
             if (stationsVisible) {
                 // Hide stations
                 removeStationMarkers();
                 toggle.classList.remove('active');
-                stationBtn.textContent = '🚇 Show Stations';
-                stationBtn.classList.remove('active');
                 stationsVisible = false;
             } else {
                 // Show stations
@@ -13254,8 +13235,6 @@
                     addStationMarkers();
                 }
                 toggle.classList.add('active');
-                stationBtn.textContent = '🚇 Hide Stations';
-                stationBtn.classList.add('active');
                 stationsVisible = true;
             }
         }
@@ -13296,6 +13275,50 @@
                 labels.forEach(label => label.style.display = 'block');
                 toggle.classList.add('active');
             }
+        }
+        
+        // Cuisine filtering
+        let hiddenCuisines = new Set();
+        
+        function toggleCuisineFilter(cuisineType) {
+            const toggle = document.getElementById(`${cuisineType}Toggle`);
+            
+            if (toggle.classList.contains('active')) {
+                // Hide this cuisine
+                hiddenCuisines.add(cuisineType);
+                toggle.classList.remove('active');
+            } else {
+                // Show this cuisine
+                hiddenCuisines.delete(cuisineType);
+                toggle.classList.add('active');
+            }
+            
+            // Update all markers visibility
+            updateMarkerVisibility();
+        }
+        
+        function updateMarkerVisibility() {
+            const allMarkers = document.querySelectorAll('.restaurant-marker');
+            
+            allMarkers.forEach(marker => {
+                const icon = marker.querySelector('.marker-icon');
+                if (icon) {
+                    // Check if this marker's cuisine is hidden
+                    let isHidden = false;
+                    hiddenCuisines.forEach(hiddenCuisine => {
+                        if (icon.classList.contains(`cuisine-${hiddenCuisine}`)) {
+                            isHidden = true;
+                        }
+                    });
+                    
+                    // Also check for Chinese (which uses same class as Japanese)
+                    if (hiddenCuisines.has('japanese') && icon.classList.contains('cuisine-chinese')) {
+                        isHidden = true;
+                    }
+                    
+                    marker.style.display = isHidden ? 'none' : 'flex';
+                }
+            });
         }
         
         // Dropdown functions
