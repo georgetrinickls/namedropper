@@ -402,22 +402,141 @@
         .marker-icon.cuisine-thai:hover { filter: hue-rotate(30deg) saturate(1.2) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
 
         .search-box {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             z-index: 1000;
             background: white;
-            padding: 8px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            padding: 12px 16px;
+            border-radius: 25px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            width: 90%;
+            max-width: 400px;
         }
 
         .search-input {
             border: none;
             outline: none;
-            padding: 8px;
+            padding: 8px 16px;
+            font-size: 16px;
+            width: 100%;
+            background: transparent;
+        }
+
+        .search-input::placeholder {
+            color: #999;
+        }
+
+        /* Top overlay for restaurant details */
+        .restaurant-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(40, 44, 52, 0.95);
+            color: white;
+            z-index: 2000;
+            transform: translateY(-100%);
+            transition: transform 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .restaurant-overlay.visible {
+            transform: translateY(0);
+        }
+
+        .overlay-content {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .overlay-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #007AFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .overlay-info {
+            flex: 1;
+        }
+
+        .overlay-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .overlay-subtitle {
             font-size: 14px;
-            width: 250px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .overlay-distance {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        .overlay-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .overlay-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .overlay-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .overlay-btn.primary {
+            background: #007AFF;
+        }
+
+        .overlay-btn.primary:hover {
+            background: #0056CC;
+        }
+
+        .overlay-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .overlay-close:hover {
+            background: rgba(255,255,255,0.1);
         }
     </style>
 </head>
@@ -472,6 +591,23 @@
         📍 Official Off Menu database - 667 restaurants with exact coordinates
     </div>
     
+    <!-- Restaurant overlay (hidden by default) -->
+    <div class="restaurant-overlay" id="restaurantOverlay">
+        <button class="overlay-close" onclick="hideRestaurantOverlay()">×</button>
+        <div class="overlay-content">
+            <div class="overlay-icon" id="overlayIcon">🍽️</div>
+            <div class="overlay-info">
+                <div class="overlay-title" id="overlayTitle">Restaurant Name</div>
+                <div class="overlay-subtitle" id="overlaySubtitle">Cuisine • Location</div>
+                <div class="overlay-distance" id="overlayDistance">290m away</div>
+            </div>
+            <div class="overlay-actions">
+                <button class="overlay-btn" onclick="showRestaurantDetails()">Details</button>
+                <button class="overlay-btn primary" onclick="navigateToRestaurant()">Navigate</button>
+            </div>
+        </div>
+    </div>
+
     <div id="map"></div>
     
     <script>
@@ -12685,7 +12821,12 @@
                     </div>
                 `;
                 
-                // Create popup
+                // Add click event to show overlay
+                markerEl.addEventListener('click', () => {
+                    showRestaurantOverlay(restaurant);
+                });
+                
+                // Create popup (for right-click or details)
                 const popup = new maplibregl.Popup({
                     offset: 25,
                     closeButton: false
@@ -12697,7 +12838,6 @@
                     anchor: 'center'
                 })
                     .setLngLat([restaurant.longitude, restaurant.latitude])
-                    .setPopup(popup)
                     .addTo(map);
                     
                 markers.push(marker);
@@ -12795,7 +12935,12 @@
                     </div>
                 `;
                 
-                // Create popup
+                // Add click event to show overlay
+                markerEl.addEventListener('click', () => {
+                    showRestaurantOverlay(restaurant);
+                });
+                
+                // Create popup (for right-click or details)
                 const popup = new maplibregl.Popup({
                     offset: 25,
                     closeButton: false
@@ -12807,7 +12952,6 @@
                     anchor: 'center'
                 })
                     .setLngLat([restaurant.longitude, restaurant.latitude])
-                    .setPopup(popup)
                     .addTo(map);
                     
                 markers.push(marker);
@@ -12831,6 +12975,69 @@
         function navigate(lat, lng, name) {
             const url = `https://maps.apple.com/?q=${encodeURIComponent(name)}&ll=${lat},${lng}`;
             window.open(url, '_blank');
+        }
+        
+        // Overlay functions
+        let currentRestaurant = null;
+        
+        function showRestaurantOverlay(restaurant) {
+            currentRestaurant = restaurant;
+            
+            // Update overlay content
+            document.getElementById('overlayTitle').textContent = restaurant.name;
+            document.getElementById('overlaySubtitle').textContent = `${restaurant.cuisine} • ${restaurant.city}`;
+            document.getElementById('overlayDistance').textContent = '290m away'; // Could calculate actual distance
+            
+            // Update icon color based on cuisine
+            const overlayIcon = document.getElementById('overlayIcon');
+            const cuisineType = restaurant.cuisine.toLowerCase().replace(/[^a-z]/g, '');
+            overlayIcon.textContent = getCuisineIcon(cuisineType);
+            
+            // Show overlay
+            const overlay = document.getElementById('restaurantOverlay');
+            overlay.classList.add('visible');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                hideRestaurantOverlay();
+            }, 5000);
+        }
+        
+        function hideRestaurantOverlay() {
+            const overlay = document.getElementById('restaurantOverlay');
+            overlay.classList.remove('visible');
+        }
+        
+        function getCuisineIcon(cuisineType) {
+            const icons = {
+                'japanese': '🍱',
+                'chinese': '🥢',
+                'italian': '🍝',
+                'british': '🇬🇧',
+                'indian': '🍛',
+                'french': '🥐',
+                'american': '🍔',
+                'thai': '🌶️',
+                'mexican': '🌮',
+                'seafood': '🦞'
+            };
+            return icons[cuisineType] || '🍽️';
+        }
+        
+        function showRestaurantDetails() {
+            if (currentRestaurant) {
+                // Show the regular popup for detailed information
+                hideRestaurantOverlay();
+                // Could implement a detailed modal here
+                alert(`Details for ${currentRestaurant.name}\n\n${currentRestaurant.description}\n\nGuest: ${currentRestaurant.sourceDetails.guestName}`);
+            }
+        }
+        
+        function navigateToRestaurant() {
+            if (currentRestaurant) {
+                navigate(currentRestaurant.latitude, currentRestaurant.longitude, currentRestaurant.name);
+                hideRestaurantOverlay();
+            }
         }
         
         // Dropdown functions
