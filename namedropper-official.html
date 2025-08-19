@@ -243,27 +243,18 @@
         }
         
         .marker-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
-            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            width: 28px;
+            height: 40px;
+            background: url('./assets/svg/nd-pin.svg') no-repeat center;
+            background-size: contain;
             transition: all 0.2s ease;
             margin-bottom: 4px;
-        }
-        
-        .marker-icon::after {
-            content: '🍽️';
-            font-size: 8px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
         }
         
         .marker-icon:hover {
             transform: scale(1.2);
-            box-shadow: 0 3px 12px rgba(0,0,0,0.5);
+            filter: drop-shadow(0 3px 12px rgba(0,0,0,0.5));
         }
         
         .restaurant-label {
@@ -390,15 +381,25 @@
             background: rgba(31, 119, 180, 0.9);
         }
         
-        /* Cuisine-specific marker colors */
-        .marker-icon.cuisine-japanese { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
-        .marker-icon.cuisine-italian { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
-        .marker-icon.cuisine-british { background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); }
-        .marker-icon.cuisine-indian { background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); }
-        .marker-icon.cuisine-chinese { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
-        .marker-icon.cuisine-french { background: linear-gradient(135deg, #6610f2 0%, #520dc2 100%); }
-        .marker-icon.cuisine-american { background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%); }
-        .marker-icon.cuisine-thai { background: linear-gradient(135deg, #fd7e14 0%, #e8630a 100%); }
+        /* Cuisine-specific marker colors using CSS filters */
+        .marker-icon.cuisine-japanese { filter: hue-rotate(0deg) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+        .marker-icon.cuisine-italian { filter: hue-rotate(120deg) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+        .marker-icon.cuisine-british { filter: hue-rotate(220deg) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+        .marker-icon.cuisine-indian { filter: hue-rotate(50deg) saturate(1.5) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+        .marker-icon.cuisine-chinese { filter: hue-rotate(0deg) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+        .marker-icon.cuisine-french { filter: hue-rotate(280deg) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+        .marker-icon.cuisine-american { filter: hue-rotate(180deg) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+        .marker-icon.cuisine-thai { filter: hue-rotate(30deg) saturate(1.2) drop-shadow(0 2px 8px rgba(0,0,0,0.4)); }
+        
+        /* Hover states with same color filters */
+        .marker-icon.cuisine-japanese:hover { filter: hue-rotate(0deg) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
+        .marker-icon.cuisine-italian:hover { filter: hue-rotate(120deg) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
+        .marker-icon.cuisine-british:hover { filter: hue-rotate(220deg) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
+        .marker-icon.cuisine-indian:hover { filter: hue-rotate(50deg) saturate(1.5) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
+        .marker-icon.cuisine-chinese:hover { filter: hue-rotate(0deg) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
+        .marker-icon.cuisine-french:hover { filter: hue-rotate(280deg) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
+        .marker-icon.cuisine-american:hover { filter: hue-rotate(180deg) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
+        .marker-icon.cuisine-thai:hover { filter: hue-rotate(30deg) saturate(1.2) drop-shadow(0 3px 12px rgba(0,0,0,0.5)); }
 
         .search-box {
             position: absolute;
