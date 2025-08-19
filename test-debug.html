@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - Namedropper</title>
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+        #map { height: 100vh; width: 100vw; }
+        .debug-info { position: absolute; top: 10px; left: 10px; background: white; padding: 10px; border-radius: 5px; z-index: 1000; }
+    </style>
+</head>
+<body>
+    <div class="debug-info" id="debugInfo">Loading...</div>
+    <div id="map"></div>
+    
+    <script>
+        // Test with first 10 London restaurants from the data
+        const testRestaurants = [
+            {
+                "id": "1",
+                "name": "Shack Fuyu",
+                "latitude": 51.513878,
+                "longitude": -0.130188,
+                "city": "london"
+            },
+            {
+                "id": "2", 
+                "name": "Kerridge's Bar & Grill",
+                "latitude": 51.506799,
+                "longitude": -0.124676,
+                "city": "london"
+            },
+            {
+                "id": "4",
+                "name": "Trullo",
+                "latitude": 51.546312,
+                "longitude": -0.101566,
+                "city": "london"
+            }
+        ];
+        
+        console.log('Total restaurants:', testRestaurants.length);
+        
+        // Filter London restaurants
+        const londonRestaurants = testRestaurants.filter(r => r.city === 'london');
+        console.log('London restaurants:', londonRestaurants.length);
+        
+        // Update debug info
+        document.getElementById('debugInfo').innerHTML = 
+            `Total: ${testRestaurants.length}<br>London: ${londonRestaurants.length}`;
+            
+        // Initialize map
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/0198bc7e-cd9c-7687-af88-2478a66bc2f0/style.json?key=AFesEdDbj0qoq04LDJHD',
+            center: [-0.1180, 51.5230],
+            zoom: 12
+        });
+        
+        map.on('load', function() {
+            console.log('Map loaded, adding markers...');
+            
+            londonRestaurants.forEach((restaurant, index) => {
+                console.log('Adding marker for:', restaurant.name);
+                
+                const marker = new maplibregl.Marker()
+                    .setLngLat([restaurant.longitude, restaurant.latitude])
+                    .addTo(map);
+            });
+            
+            console.log('All markers added');
+        });
+    </script>
+</body>
+</html>

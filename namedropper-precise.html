@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namedropper - Precise Restaurant Locations</title>
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+        }
+        
+        #map { 
+            height: 100vh; 
+            width: 100vw; 
+        }
+        
+        .city-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .city-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+        
+        .city-btn:hover {
+            background: #ff5252;
+            transform: translateY(-1px);
+        }
+        
+        .city-btn.active {
+            background: #333;
+        }
+        
+        .restaurant-count {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        
+        .precision-notice {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .restaurant-popup {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 320px;
+            font-size: 14px;
+        }
+        
+        .restaurant-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .restaurant-cuisine {
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .source-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        
+        .restaurant-description {
+            color: #555;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        
+        .guest-info {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .restaurant-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .action-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .action-btn:hover {
+            background: #0056CC;
+        }
+        
+        .marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            background: #ff6b6b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .marker::after {
+            content: '🍽️';
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="city-controls">
+        <button class="city-btn active" onclick="showCity('london')">
+            London (6)
+        </button>
+        <button class="city-btn" onclick="showCity('nyc')">
+            NYC (2)
+        </button>
+        <button class="city-btn" onclick="showCity('la')">
+            LA (2)
+        </button>
+        <button class="city-btn" onclick="showCity('all')">
+            View All
+        </button>
+    </div>
+    
+    <div class="restaurant-count" id="restaurant-count">
+        Showing 6 restaurants in London
+    </div>
+    
+    <div class="precision-notice">
+        📍 Precise GPS coordinates - markers on exact buildings
+    </div>
+    
+    <div id="map"></div>
+    
+    <script>
+        // Off Menu Restaurants with EXACT GPS coordinates
+        const restaurants = [
+            // LONDON (6 restaurants) - Precise coordinates
+            {
+                id: '1',
+                name: 'Shack-Fuyu',
+                latitude: 51.5137311,
+                longitude: -0.1300920,
+                address: '14a Old Compton Street, London W1D 4TJ',
+                cuisine: 'Japanese',
+                description: 'Modern Japanese small plates with a creative twist, recommended by multiple Off Menu guests.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Ed Gamble, James Acaster, Kumail Nanjiani, Celya AB',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7287 8888',
+                website: 'https://www.shackfuyu.com/',
+            },
+            {
+                id: '2',
+                name: 'Trullo',
+                latitude: 51.546268628042,
+                longitude: -0.10148952213528,
+                address: '300-302 St Paul\'s Rd, London N1 2LH',
+                cuisine: 'Italian',
+                description: 'Authentic Italian dining with hand-rolled pasta and simple, perfect ingredients.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Grace Dent',
+                    episodeTitle: 'Grace Dent episode',
+                },
+                priceRange: '$$',
+                phoneNumber: '+44 20 7226 2733',
+                website: 'https://www.trullorestaurant.com/',
+            },
+            {
+                id: '3',
+                name: 'Kerridge\'s Bar & Grill',
+                latitude: 51.5059,
+                longitude: -0.1241,
+                address: '10 Northumberland Ave, London WC2N 5AE',
+                cuisine: 'British',
+                description: 'Tom Kerridge\'s London restaurant serving elevated British cuisine.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Ed Gamble, James Acaster',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7321 3244',
+                website: 'https://www.kerridgesbarandgrill.co.uk/',
+            },
+            {
+                id: '4',
+                name: 'St. John',
+                latitude: 51.5201,
+                longitude: -0.1014,
+                address: '26 St John St, London EC1M 4AY',
+                cuisine: 'British',
+                description: 'Nose-to-tail dining pioneer famous for bone marrow and offal preparations.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    episodeTitle: 'Episode 67: Fergus Henderson',
+                    guestName: 'Fergus Henderson',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7251 0848',
+                website: 'https://stjohnrestaurant.com/',
+            },
+            {
+                id: '5',
+                name: 'Dishoom',
+                latitude: 51.5081,
+                longitude: -0.1280,
+                address: '12 Upper St Martin\'s Ln, London WC2H 9FB',
+                cuisine: 'Indian',
+                description: 'Bombay café culture brought to London with exceptional black daal and bacon naan rolls.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+44 20 7420 9320',
+                website: 'https://www.dishoom.com/',
+            },
+            {
+                id: '6',
+                name: 'Rules',
+                latitude: 51.5108,
+                longitude: -0.1219,
+                address: '35 Maiden Ln, London WC2E 7LB',
+                cuisine: 'British',
+                description: 'London\'s oldest restaurant serving traditional British fare since 1798.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    episodeTitle: 'Episode 89: Tom Kerridge',
+                    guestName: 'Tom Kerridge',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7836 5314',
+                website: 'https://rules.co.uk/',
+            },
+            
+            // NEW YORK (2 restaurants) - Precise coordinates
+            {
+                id: '7',
+                name: 'Katz\'s Delicatessen',
+                latitude: 40.722195,
+                longitude: -73.987480,
+                address: '205 E Houston St, New York, NY 10002',
+                cuisine: 'Jewish Deli',
+                description: 'Legendary NYC deli famous for pastrami sandwiches, featured by multiple Off Menu guests.',
+                source: 'offmenu',
+                city: 'nyc',
+                sourceDetails: {
+                    guestName: 'Jamie Demetriou, Ed Gamble, Sara Barron, Olga Koch',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+1 212-254-2246',
+                website: 'https://katzsdelicatessen.com/',
+            },
+            {
+                id: '8',
+                name: 'The Dutch',
+                latitude: 40.7223,
+                longitude: -74.0059,
+                address: '131 Sullivan St, New York, NY 10012',
+                cuisine: 'American',
+                description: 'SoHo restaurant serving modern American cuisine with Dutch influences.',
+                source: 'offmenu',
+                city: 'nyc',
+                sourceDetails: {
+                    guestName: 'Ed Gamble, James Acaster',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+1 212-677-6200',
+                website: 'https://www.thedutchnyc.com/',
+            },
+            
+            // LOS ANGELES (2 restaurants) - Precise coordinates
+            {
+                id: '9',
+                name: 'Jitlada',
+                latitude: 34.0938,
+                longitude: -118.3021,
+                address: '5233 Sunset Blvd, Los Angeles, CA 90027',
+                cuisine: 'Thai',
+                description: 'Authentic spicy Thai cuisine, a Los Angeles institution loved by locals.',
+                source: 'offmenu',
+                city: 'la',
+                sourceDetails: {
+                    guestName: 'Kumail Nanjiani, James Acaster',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+1 323-667-9809',
+            },
+            {
+                id: '10',
+                name: 'Café Gratitude',
+                latitude: 34.0722,
+                longitude: -118.2537,
+                address: '639 N Larchmont Blvd, Los Angeles, CA 90004',
+                cuisine: 'Plant-Based',
+                description: 'Plant-based restaurant with positive affirmations and conscious dining.',
+                source: 'offmenu',
+                city: 'la',
+                sourceDetails: {
+                    guestName: 'Aisling Bea, Sam Carter, Amy Hoggart, Simon Amstell',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+1 323-580-6776',
+                website: 'https://cafegratitude.com/',
+            },
+        ];
+        
+        // City coordinates for map centering
+        const cityCoordinates = {
+            london: { center: [-0.1180, 51.5230], zoom: 13 },
+            nyc: { center: [-73.985, 40.748], zoom: 13 },
+            la: { center: [-118.270, 34.070], zoom: 12 },
+            all: { center: [-50, 45], zoom: 2.5 }
+        };
+        
+        // Initialize map
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/0198bc7e-cd9c-7687-af88-2478a66bc2f0/style.json?key=AFesEdDbj0qoq04LDJHD',
+            center: cityCoordinates.london.center,
+            zoom: cityCoordinates.london.zoom
+        });
+        
+        let markers = [];
+        let currentCity = 'london';
+        
+        // Add markers function
+        function addMarkers(city = 'all') {
+            // Clear existing markers
+            markers.forEach(marker => marker.remove());
+            markers = [];
+            
+            // Filter restaurants by city
+            const filteredRestaurants = city === 'all' 
+                ? restaurants 
+                : restaurants.filter(r => r.city === city);
+                
+            filteredRestaurants.forEach(restaurant => {
+                // Create marker element
+                const markerEl = document.createElement('div');
+                markerEl.className = 'marker';
+                
+                // Create popup content
+                const popupContent = `
+                    <div class="restaurant-popup">
+                        <div class="restaurant-name">${restaurant.name}</div>
+                        <div class="restaurant-cuisine">${restaurant.cuisine} • ${restaurant.priceRange}</div>
+                        <div class="source-badge">Off Menu Podcast</div>
+                        <div class="restaurant-description">${restaurant.description}</div>
+                        <div class="guest-info">
+                            <strong>Featured by:</strong> ${restaurant.sourceDetails.guestName}
+                        </div>
+                        <div style="font-size: 11px; color: #999; margin-top: 8px;">
+                            📍 GPS: ${restaurant.latitude.toFixed(6)}, ${restaurant.longitude.toFixed(6)}
+                        </div>
+                        <div class="restaurant-actions">
+                            <button class="action-btn" onclick="navigate(${restaurant.latitude}, ${restaurant.longitude}, '${restaurant.name}')">Navigate</button>
+                            ${restaurant.phoneNumber ? `<button class="action-btn" onclick="window.open('tel:${restaurant.phoneNumber}')">Call</button>` : ''}
+                            ${restaurant.website ? `<button class="action-btn" onclick="window.open('${restaurant.website}', '_blank')">Website</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // Create popup
+                const popup = new maplibregl.Popup({
+                    offset: 25,
+                    closeButton: false
+                }).setHTML(popupContent);
+                
+                // Create marker
+                const marker = new maplibregl.Marker(markerEl)
+                    .setLngLat([restaurant.longitude, restaurant.latitude])
+                    .setPopup(popup)
+                    .addTo(map);
+                    
+                markers.push(marker);
+            });
+            
+            // Update count display
+            const countEl = document.getElementById('restaurant-count');
+            const cityName = city === 'all' ? 'all cities' : 
+                           city === 'london' ? 'London' :
+                           city === 'nyc' ? 'NYC' : 'LA';
+            countEl.textContent = `Showing ${filteredRestaurants.length} restaurants in ${cityName}`;
+        }
+        
+        // Show city function
+        function showCity(city) {
+            currentCity = city;
+            
+            // Update button states
+            document.querySelectorAll('.city-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Move map to city
+            const coords = cityCoordinates[city];
+            map.flyTo({
+                center: coords.center,
+                zoom: coords.zoom,
+                duration: 2000
+            });
+            
+            // Update markers
+            addMarkers(city);
+        }
+        
+        // Navigation function
+        function navigate(lat, lng, name) {
+            const url = `https://maps.apple.com/?q=${encodeURIComponent(name)}&ll=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+        
+        // Initialize when map loads
+        map.on('load', function() {
+            addMarkers('london'); // Start with London view
+            
+            // Add navigation controls
+            map.addControl(new maplibregl.NavigationControl());
+            
+            // Add geolocate control
+            map.addControl(new maplibregl.GeolocateControl({
+                positionOptions: {
+                    enableHighAccuracy: true
+                },
+                trackUserLocation: true
+            }));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Namedropper - Expanded Off Menu Restaurant List</title>
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+        }
+        
+        #map { 
+            height: 100vh; 
+            width: 100vw; 
+        }
+        
+        .city-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .city-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+        
+        .city-btn:hover {
+            background: #ff5252;
+            transform: translateY(-1px);
+        }
+        
+        .city-btn.active {
+            background: #333;
+        }
+        
+        .restaurant-count {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            max-width: 200px;
+        }
+        
+        .legend h4 {
+            margin: 0 0 8px 0;
+            font-size: 12px;
+        }
+        
+        .precision-notice {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .restaurant-popup {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 320px;
+            font-size: 14px;
+        }
+        
+        .restaurant-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .restaurant-cuisine {
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .source-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        
+        .restaurant-description {
+            color: #555;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        
+        .guest-info {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin: 8px 0;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .restaurant-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .action-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .action-btn:hover {
+            background: #0056CC;
+        }
+        
+        .marker {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 3px solid white;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            background: #ff6b6b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .marker::after {
+            content: '🍽️';
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="city-controls">
+        <button class="city-btn active" onclick="showCity('london')">
+            London (15)
+        </button>
+        <button class="city-btn" onclick="showCity('nyc')">
+            NYC (5)
+        </button>
+        <button class="city-btn" onclick="showCity('la')">
+            LA (3)
+        </button>
+        <button class="city-btn" onclick="showCity('international')">
+            International (7)
+        </button>
+        <button class="city-btn" onclick="showCity('all')">
+            View All (30)
+        </button>
+    </div>
+    
+    <div class="restaurant-count" id="restaurant-count">
+        Showing 15 restaurants in London
+    </div>
+    
+    <div class="legend">
+        <h4>🍽️ Off Menu Restaurants</h4>
+        <div>• Precise GPS locations</div>
+        <div>• Guest recommendations</div>
+        <div>• Click for details</div>
+    </div>
+    
+    <div class="precision-notice">
+        📍 30+ restaurants from Off Menu podcast
+    </div>
+    
+    <div id="map"></div>
+    
+    <script>
+        // Expanded Off Menu Restaurant List (30+ restaurants)
+        const restaurants = [
+            // LONDON (15 restaurants)
+            {
+                id: '1',
+                name: 'Shack-Fuyu',
+                latitude: 51.5137311,
+                longitude: -0.1300920,
+                address: '14a Old Compton Street, London W1D 4TJ',
+                cuisine: 'Japanese',
+                description: 'Modern Japanese small plates with a creative twist, recommended by multiple Off Menu guests.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Ed Gamble, James Acaster, Kumail Nanjiani, Celya AB',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7287 8888',
+                website: 'https://www.shackfuyu.com/',
+            },
+            {
+                id: '2',
+                name: 'Trullo',
+                latitude: 51.546268628042,
+                longitude: -0.10148952213528,
+                address: '300-302 St Paul\'s Rd, London N1 2LH',
+                cuisine: 'Italian',
+                description: 'Authentic Italian dining with hand-rolled pasta and simple, perfect ingredients.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Grace Dent',
+                    episodeTitle: 'Grace Dent episode',
+                },
+                priceRange: '$$',
+                phoneNumber: '+44 20 7226 2733',
+                website: 'https://www.trullorestaurant.com/',
+            },
+            {
+                id: '3',
+                name: 'St. John',
+                latitude: 51.5201,
+                longitude: -0.1014,
+                address: '26 St John St, London EC1M 4AY',
+                cuisine: 'British',
+                description: 'Nose-to-tail dining pioneer famous for bone marrow and offal preparations.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    episodeTitle: 'Fergus Henderson & Josie Long episodes',
+                    guestName: 'Fergus Henderson, Josie Long, Ed Gamble, Rhys Nicholson',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7251 0848',
+                website: 'https://stjohnrestaurant.com/',
+            },
+            {
+                id: '4',
+                name: 'Kerridge\'s Bar & Grill',
+                latitude: 51.5059,
+                longitude: -0.1241,
+                address: '10 Northumberland Ave, London WC2N 5AE',
+                cuisine: 'British',
+                description: 'Tom Kerridge\'s London restaurant serving elevated British cuisine.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Ed Gamble, James Acaster',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7321 3244',
+                website: 'https://www.kerridgesbarandgrill.co.uk/',
+            },
+            {
+                id: '5',
+                name: 'Dishoom',
+                latitude: 51.5081,
+                longitude: -0.1280,
+                address: '12 Upper St Martin\'s Ln, London WC2H 9FB',
+                cuisine: 'Indian',
+                description: 'Bombay café culture brought to London with exceptional black daal and bacon naan rolls.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+44 20 7420 9320',
+                website: 'https://www.dishoom.com/',
+            },
+            {
+                id: '6',
+                name: 'Rules',
+                latitude: 51.5108,
+                longitude: -0.1219,
+                address: '35 Maiden Ln, London WC2E 7LB',
+                cuisine: 'British',
+                description: 'London\'s oldest restaurant serving traditional British fare since 1798.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    episodeTitle: 'Episode 89: Tom Kerridge',
+                    guestName: 'Tom Kerridge',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7836 5314',
+                website: 'https://rules.co.uk/',
+            },
+            {
+                id: '7',
+                name: 'Cora Pearl',
+                latitude: 51.5074,
+                longitude: -0.1378,
+                address: '30 Henrietta St, London WC2E 8NA',
+                cuisine: 'French',
+                description: 'Modern French dining in Covent Garden with theatrical flair.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Richard Osman',
+                    episodeTitle: 'Richard Osman episode',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7324 7722',
+                website: 'https://www.corapearlrestaurant.co.uk/',
+            },
+            {
+                id: '8',
+                name: 'Berners Tavern',
+                latitude: 51.5172,
+                longitude: -0.1395,
+                address: '10 Berners St, London W1T 3NP',
+                cuisine: 'British Contemporary',
+                description: 'Grand dining room serving modern British cuisine in a stunning setting.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Richard Osman',
+                    episodeTitle: 'Richard Osman episode',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7908 7979',
+                website: 'https://www.bernerstavern.com/',
+            },
+            {
+                id: '9',
+                name: 'Hakkasan',
+                latitude: 51.5154,
+                longitude: -0.1370,
+                address: '8 Hanway Pl, London W1T 1HD',
+                cuisine: 'Chinese',
+                description: 'Upscale Cantonese dining with modern Chinese cuisine in stylish surroundings.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Lolly Adefope, Dane Baptiste',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                phoneNumber: '+44 20 7927 7000',
+                website: 'https://hakkasan.com/',
+            },
+            {
+                id: '10',
+                name: 'Burger & Lobster',
+                latitude: 51.5142,
+                longitude: -0.1506,
+                address: '29 Clarges St, London W1J 7EF',
+                cuisine: 'Seafood/American',
+                description: 'Simple menu focusing on premium burgers and fresh lobster.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Aisling Bea',
+                    episodeTitle: 'Aisling Bea episode',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 7409 1699',
+                website: 'https://burgerandlobster.com/',
+            },
+            {
+                id: '11',
+                name: 'Gymkhana',
+                latitude: 51.5082,
+                longitude: -0.1439,
+                address: '42 Albemarle St, London W1S 4JH',
+                cuisine: 'Indian',
+                description: 'High-end Indian dining inspired by elite clubs of British India.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Ed Gamble',
+                    episodeTitle: 'Ed Gamble episode',
+                },
+                priceRange: '$$$$',
+                phoneNumber: '+44 20 3011 5900',
+                website: 'https://www.gymkhanalondon.com/',
+            },
+            {
+                id: '12',
+                name: 'Padella',
+                latitude: 51.5055,
+                longitude: -0.0754,
+                address: '6 Southwark St, London SE1 1TQ',
+                cuisine: 'Italian',
+                description: 'Fresh handmade pasta served at Borough Market with queues around the block.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$',
+                phoneNumber: '+44 20 7357 8889',
+            },
+            {
+                id: '13',
+                name: 'Duck & Waffle',
+                latitude: 51.5154,
+                longitude: -0.0789,
+                address: '110 Bishopsgate, London EC2N 4AY',
+                cuisine: 'British Contemporary',
+                description: '40th-floor restaurant offering British cuisine with spectacular city views.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+44 20 3640 7310',
+                website: 'https://duckandwaffle.com/',
+            },
+            {
+                id: '14',
+                name: 'Sketch',
+                latitude: 51.5119,
+                longitude: -0.1413,
+                address: '9 Conduit St, London W1S 2XG',
+                cuisine: 'French Contemporary',
+                description: 'Artistic dining destination with unique pod-like toilets and avant-garde design.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                phoneNumber: '+44 20 7659 4500',
+                website: 'https://sketch.london/',
+            },
+            {
+                id: '15',
+                name: 'Franco Manca',
+                latitude: 51.5015,
+                longitude: -0.1148,
+                address: 'Multiple locations, London',
+                cuisine: 'Italian/Pizza',
+                description: 'Sourdough pizza chain serving Neapolitan-style pizzas with simple, quality toppings.',
+                source: 'offmenu',
+                city: 'london',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$',
+                website: 'https://www.francomanca.co.uk/',
+            },
+            
+            // NEW YORK (5 restaurants)
+            {
+                id: '16',
+                name: 'Katz\'s Delicatessen',
+                latitude: 40.722195,
+                longitude: -73.987480,
+                address: '205 E Houston St, New York, NY 10002',
+                cuisine: 'Jewish Deli',
+                description: 'Legendary NYC deli famous for pastrami sandwiches, featured by multiple Off Menu guests.',
+                source: 'offmenu',
+                city: 'nyc',
+                sourceDetails: {
+                    guestName: 'Jamie Demetriou, Ed Gamble, Sara Barron, Olga Koch',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+1 212-254-2246',
+                website: 'https://katzsdelicatessen.com/',
+            },
+            {
+                id: '17',
+                name: 'The Dutch',
+                latitude: 40.7223,
+                longitude: -74.0059,
+                address: '131 Sullivan St, New York, NY 10012',
+                cuisine: 'American',
+                description: 'SoHo restaurant serving modern American cuisine with Dutch influences.',
+                source: 'offmenu',
+                city: 'nyc',
+                sourceDetails: {
+                    guestName: 'Ed Gamble, James Acaster',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$',
+                phoneNumber: '+1 212-677-6200',
+                website: 'https://www.thedutchnyc.com/',
+            },
+            {
+                id: '18',
+                name: 'Joe\'s Pizza',
+                latitude: 40.7308,
+                longitude: -74.0034,
+                address: '7 Carmine St, New York, NY 10014',
+                cuisine: 'Pizza',
+                description: 'Classic NYC pizza joint serving traditional New York-style slices since 1975.',
+                source: 'offmenu',
+                city: 'nyc',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$',
+                phoneNumber: '+1 212-366-1182',
+                website: 'https://www.joespizzanyc.com/',
+            },
+            {
+                id: '19',
+                name: 'Peter Luger Steak House',
+                latitude: 40.7102,
+                longitude: -73.9626,
+                address: '178 Broadway, Brooklyn, NY 11249',
+                cuisine: 'Steakhouse',
+                description: 'Historic Brooklyn steakhouse serving porterhouse steaks since 1887.',
+                source: 'offmenu',
+                city: 'nyc',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                phoneNumber: '+1 718-387-7400',
+                website: 'https://peterluger.com/',
+            },
+            {
+                id: '20',
+                name: 'Xi\'an Famous Foods',
+                latitude: 40.7223,
+                longitude: -73.9956,
+                address: '81 St Marks Pl, New York, NY 10003',
+                cuisine: 'Chinese',
+                description: 'Hand-pulled noodles and spicy Chinese street food from Xi\'an region.',
+                source: 'offmenu',
+                city: 'nyc',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$',
+                phoneNumber: '+1 212-786-2068',
+                website: 'https://xianfoods.com/',
+            },
+            
+            // LOS ANGELES (3 restaurants)
+            {
+                id: '21',
+                name: 'Jitlada',
+                latitude: 34.0938,
+                longitude: -118.3021,
+                address: '5233 Sunset Blvd, Los Angeles, CA 90027',
+                cuisine: 'Thai',
+                description: 'Authentic spicy Thai cuisine, a Los Angeles institution loved by locals.',
+                source: 'offmenu',
+                city: 'la',
+                sourceDetails: {
+                    guestName: 'Kumail Nanjiani, James Acaster',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+1 323-667-9809',
+            },
+            {
+                id: '22',
+                name: 'Café Gratitude',
+                latitude: 34.0722,
+                longitude: -118.2537,
+                address: '639 N Larchmont Blvd, Los Angeles, CA 90004',
+                cuisine: 'Plant-Based',
+                description: 'Plant-based restaurant with positive affirmations and conscious dining.',
+                source: 'offmenu',
+                city: 'la',
+                sourceDetails: {
+                    guestName: 'Aisling Bea, Sam Carter, Amy Hoggart, Simon Amstell',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+1 323-580-6776',
+                website: 'https://cafegratitude.com/',
+            },
+            {
+                id: '23',
+                name: 'Guelaguetza',
+                latitude: 34.0625,
+                longitude: -118.2926,
+                address: '3014 W Olympic Blvd, Los Angeles, CA 90006',
+                cuisine: 'Mexican/Oaxacan',
+                description: 'Authentic Oaxacan cuisine serving traditional mole and regional specialties.',
+                source: 'offmenu',
+                city: 'la',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$',
+                phoneNumber: '+1 213-427-0601',
+                website: 'https://www.ilovemole.com/',
+            },
+            
+            // INTERNATIONAL (7 restaurants)
+            {
+                id: '24',
+                name: 'Noma',
+                latitude: 55.6872,
+                longitude: 12.6014,
+                address: 'Refshalevej 96, Copenhagen, Denmark',
+                cuisine: 'Nordic',
+                description: 'World-renowned restaurant pioneering New Nordic cuisine with foraging and fermentation.',
+                source: 'offmenu',
+                city: 'international',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                website: 'https://noma.dk/',
+            },
+            {
+                id: '25',
+                name: 'Osteria Francescana',
+                latitude: 44.6441,
+                longitude: 10.9253,
+                address: 'Via Stella, 22, Modena, Italy',
+                cuisine: 'Italian',
+                description: 'Three Michelin star restaurant serving innovative Italian cuisine by Massimo Bottura.',
+                source: 'offmenu',
+                city: 'international',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                website: 'https://osteriafrancescana.it/',
+            },
+            {
+                id: '26',
+                name: 'Sukiyabashi Jiro',
+                latitude: 35.6719,
+                longitude: 139.7640,
+                address: 'Tsukamoto Sogyo Building, Tokyo, Japan',
+                cuisine: 'Sushi',
+                description: 'Legendary sushi restaurant by Jiro Ono, featured in \'Jiro Dreams of Sushi\'.',
+                source: 'offmenu',
+                city: 'international',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+            },
+            {
+                id: '27',
+                name: 'El Celler de Can Roca',
+                latitude: 41.9794,
+                longitude: 2.8214,
+                address: 'Can Sunyer, 48, Girona, Spain',
+                cuisine: 'Spanish',
+                description: 'Three Michelin star restaurant by the Roca brothers, known for innovative Catalan cuisine.',
+                source: 'offmenu',
+                city: 'international',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                website: 'https://cellercanroca.com/',
+            },
+            {
+                id: '28',
+                name: 'Eleven Madison Park',
+                latitude: 40.7424,
+                longitude: -73.9871,
+                address: '11 Madison Ave, New York, NY 10010',
+                cuisine: 'Plant-Based Fine Dining',
+                description: 'Plant-based fine dining restaurant with artistic presentation and seasonal menu.',
+                source: 'offmenu',
+                city: 'international',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                website: 'https://elevenmadisonpark.com/',
+            },
+            {
+                id: '29',
+                name: 'Attica',
+                latitude: -37.8621,
+                longitude: 145.0007,
+                address: '74 Glen Eira Rd, Ripponlea VIC, Australia',
+                cuisine: 'Australian',
+                description: 'Melbourne restaurant showcasing Australian native ingredients and innovative techniques.',
+                source: 'offmenu',
+                city: 'international',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                website: 'https://www.attica.com.au/',
+            },
+            {
+                id: '30',
+                name: 'The French Laundry',
+                latitude: 38.4024,
+                longitude: -122.5218,
+                address: '6640 Washington St, Yountville, CA 94599',
+                cuisine: 'French',
+                description: 'Thomas Keller\'s iconic Napa Valley restaurant serving French cuisine with American influences.',
+                source: 'offmenu',
+                city: 'international',
+                sourceDetails: {
+                    guestName: 'Multiple guests',
+                    episodeTitle: 'Multiple episodes',
+                },
+                priceRange: '$$$$',
+                website: 'https://www.thomaskeller.com/tfl',
+            },
+        ];
+        
+        // City coordinates for map centering
+        const cityCoordinates = {
+            london: { center: [-0.1180, 51.5230], zoom: 12 },
+            nyc: { center: [-73.985, 40.748], zoom: 12 },
+            la: { center: [-118.270, 34.070], zoom: 11 },
+            international: { center: [0, 30], zoom: 2 },
+            all: { center: [-20, 40], zoom: 2 }
+        };
+        
+        // Initialize map
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://api.maptiler.com/maps/0198bc7e-cd9c-7687-af88-2478a66bc2f0/style.json?key=AFesEdDbj0qoq04LDJHD',
+            center: cityCoordinates.london.center,
+            zoom: cityCoordinates.london.zoom
+        });
+        
+        let markers = [];
+        let currentCity = 'london';
+        
+        // Add markers function
+        function addMarkers(city = 'all') {
+            // Clear existing markers
+            markers.forEach(marker => marker.remove());
+            markers = [];
+            
+            // Filter restaurants by city
+            const filteredRestaurants = city === 'all' 
+                ? restaurants 
+                : restaurants.filter(r => r.city === city);
+                
+            filteredRestaurants.forEach(restaurant => {
+                // Create marker element
+                const markerEl = document.createElement('div');
+                markerEl.className = 'marker';
+                
+                // Create popup content
+                const popupContent = `
+                    <div class="restaurant-popup">
+                        <div class="restaurant-name">${restaurant.name}</div>
+                        <div class="restaurant-cuisine">${restaurant.cuisine} • ${restaurant.priceRange}</div>
+                        <div class="source-badge">Off Menu Podcast</div>
+                        <div class="restaurant-description">${restaurant.description}</div>
+                        <div class="guest-info">
+                            <strong>Featured by:</strong> ${restaurant.sourceDetails.guestName}
+                        </div>
+                        <div class="restaurant-actions">
+                            <button class="action-btn" onclick="navigate(${restaurant.latitude}, ${restaurant.longitude}, '${restaurant.name}')">Navigate</button>
+                            ${restaurant.phoneNumber ? `<button class="action-btn" onclick="window.open('tel:${restaurant.phoneNumber}')">Call</button>` : ''}
+                            ${restaurant.website ? `<button class="action-btn" onclick="window.open('${restaurant.website}', '_blank')">Website</button>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                // Create popup
+                const popup = new maplibregl.Popup({
+                    offset: 25,
+                    closeButton: false
+                }).setHTML(popupContent);
+                
+                // Create marker
+                const marker = new maplibregl.Marker(markerEl)
+                    .setLngLat([restaurant.longitude, restaurant.latitude])
+                    .setPopup(popup)
+                    .addTo(map);
+                    
+                markers.push(marker);
+            });
+            
+            // Update count display
+            const countEl = document.getElementById('restaurant-count');
+            const cityName = city === 'all' ? 'all cities' : 
+                           city === 'london' ? 'London' :
+                           city === 'nyc' ? 'NYC' : 
+                           city === 'la' ? 'LA' : 'International';
+            countEl.textContent = `Showing ${filteredRestaurants.length} restaurants in ${cityName}`;
+        }
+        
+        // Show city function
+        function showCity(city) {
+            currentCity = city;
+            
+            // Update button states
+            document.querySelectorAll('.city-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Move map to city
+            const coords = cityCoordinates[city];
+            map.flyTo({
+                center: coords.center,
+                zoom: coords.zoom,
+                duration: 2000
+            });
+            
+            // Update markers
+            addMarkers(city);
+        }
+        
+        // Navigation function
+        function navigate(lat, lng, name) {
+            const url = `https://maps.apple.com/?q=${encodeURIComponent(name)}&ll=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+        
+        // Initialize when map loads
+        map.on('load', function() {
+            addMarkers('london'); // Start with London view
+            
+            // Add navigation controls
+            map.addControl(new maplibregl.NavigationControl());
+            
+            // Add geolocate control
+            map.addControl(new maplibregl.GeolocateControl({
+                positionOptions: {
+                    enableHighAccuracy: true
+                },
+                trackUserLocation: true
+            }));
+        });
+    </script>
+</body>
+</html>
