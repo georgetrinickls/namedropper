@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Namedropper - Off Menu Restaurants</title>
+    <script src="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl@2.4.0/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #000;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        
+        #map { 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        
+        /* Waze-like hamburger menu */
+        .hamburger-menu {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .hamburger-menu:active {
+            transform: scale(0.95);
+        }
+        
+        .hamburger {
+            width: 24px;
+            height: 20px;
+            position: relative;
+        }
+        
+        .hamburger span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: #333;
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+        
+        .hamburger span:nth-child(1) { top: 0; }
+        .hamburger span:nth-child(2) { top: 8px; }
+        .hamburger span:nth-child(3) { top: 16px; }
+        
+        /* Location button */
+        .location-btn {
+            position: fixed;
+            top: 85px;
+            left: 20px;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border: none;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 20px;
+        }
+        
+        .location-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .location-btn.active {
+            background: #007AFF;
+            color: white;
+        }
+        
+        /* User location marker */
+        .user-marker {
+            width: 20px;
+            height: 20px;
+            background: #007AFF;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0,123,255,0.5);
+            position: relative;
+        }
+        
+        .user-marker::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: white;
+            border-radius: 50%;
+        }
+        
+        /* Restaurant markers - smaller for mobile */
+        .restaurant-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        .marker-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .marker-icon::after {
+            content: '🍽️';
+            font-size: 14px;
+        }
+        
+        .marker-icon:active {
+            transform: scale(1.1);
+        }
+        
+        /* Cuisine-specific marker colors */
+        .marker-icon.cuisine-japanese { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
+        .marker-icon.cuisine-italian { background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%); }
+        .marker-icon.cuisine-british { background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); }
+        .marker-icon.cuisine-indian { background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%); }
+        .marker-icon.cuisine-chinese { background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); }
+        .marker-icon.cuisine-french { background: linear-gradient(135deg, #6610f2 0%, #520dc2 100%); }
+        .marker-icon.cuisine-american { background: linear-gradient(135deg, #0dcaf0 0%, #0aa2c0 100%); }
+        .marker-icon.cuisine-thai { background: linear-gradient(135deg, #fd7e14 0%, #e8630a 100%); }
+        
+        /* Bottom sheet */
+        .bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px 20px 0 0;
+            z-index: 2000;
+            transform: translateY(calc(100% - 120px));
+            transition: transform 0.3s ease;
+            box-shadow: 0 -4px 30px rgba(0,0,0,0.3);
+            max-height: 80vh;
+            min-height: 120px;
+        }
+        
+        .bottom-sheet.expanded {
+            transform: translateY(0);
+        }
+        
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            margin: 12px auto 16px;
+            cursor: pointer;
+        }
+        
+        .sheet-content {
+            padding: 0 20px 30px;
+            overflow-y: auto;
+            max-height: calc(80vh - 60px);
+        }
+        
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 16px 50px 16px 16px;
+            border: none;
+            background: #f5f5f5;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+            color: #999;
+        }
+        
+        .sheet-header {
+            margin-bottom: 20px;
+        }
+        
+        .sheet-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .sheet-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .quick-filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .filter-chip {
+            background: #f5f5f5;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-chip:active {
+            background: #007AFF;
+            color: white;
+        }
+        
+        .restaurant-list {
+            display: none; /* Hidden by default, shown when searching */
+        }
+        
+        .restaurant-card {
+            display: flex;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+        }
+        
+        .restaurant-card:last-child {
+            border-bottom: none;
+        }
+        
+        .restaurant-card:active {
+            background: #f8f9fa;
+        }
+        
+        .restaurant-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            margin-right: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .restaurant-info {
+            flex: 1;
+        }
+        
+        .restaurant-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .restaurant-details {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .restaurant-distance {
+            color: #007AFF;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        /* Popup for restaurant details */
+        .restaurant-popup {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            max-width: 320px;
+            font-size: 14px;
+        }
+        
+        .popup-restaurant-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .popup-cuisine {
+            color: #666;
+            margin-bottom: 12px;
+        }
+        
+        .popup-source-badge {
+            background: #ff6b6b;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 12px;
+        }
+        
+        .popup-description {
+            color: #555;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+        
+        .popup-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 16px;
+        }
+        
+        .popup-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            flex: 1;
+            font-weight: 600;
+        }
+        
+        .popup-btn:active {
+            background: #0056CC;
+        }
+        
+        /* Location permission overlay */
+        .location-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+            padding: 20px;
+        }
+        
+        .location-prompt {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            text-align: center;
+            max-width: 320px;
+        }
+        
+        .location-prompt h2 {
+            margin-bottom: 16px;
+            color: #333;
+        }
+        
+        .location-prompt p {
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+        
+        .prompt-btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <!-- Location permission overlay -->
+    <div class="location-overlay" id="locationOverlay">
+        <div class="location-prompt">
+            <h2>📍 Enable Location</h2>
+            <p>Namedropper needs your location to show nearby Off Menu restaurants and provide navigation.</p>
+            <button class="prompt-btn" onclick="requestLocation()">Enable Location</button>
+        </div>
+    </div>
+    
+    <!-- Map -->
+    <div id="map"></div>
+    
+    <!-- Waze-like controls -->
+    <div class="hamburger-menu" onclick="toggleMenu()">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+    
+    <button class="location-btn" id="locationBtn" onclick="centerOnUser()">
+        📍
+    </button>
+    
+    <!-- Bottom sheet -->
+    <div class="bottom-sheet" id="bottomSheet">
+        <div class="sheet-handle" onclick="toggleSheet()"></div>
+        <div class="sheet-content">
+            <div class="search-container">
+                <input type="text" class="search-input" placeholder="Where to?" onkeyup="searchRestaurants(this.value)" onfocus="expandSheet()">
+                <div class="search-icon">🔍</div>
+            </div>
+            
+            <div class="sheet-header" id="defaultContent">
+                <div class="sheet-title">Off Menu Restaurants</div>
+                <div class="sheet-subtitle">667 celebrity recommendations worldwide</div>
+                
+                <div class="quick-filters">
+                    <button class="filter-chip" onclick="filterByCity('london')">London</button>
+                    <button class="filter-chip" onclick="filterByCity('nyc')">NYC</button>
+                    <button class="filter-chip" onclick="filterByCity('la')">LA</button>
+                    <button class="filter-chip" onclick="filterByCuisine('japanese')">Japanese</button>
+                    <button class="filter-chip" onclick="filterByCuisine('italian')">Italian</button>
+                    <button class="filter-chip" onclick="filterByCuisine('british')">British</button>
+                </div>
+            </div>
+            
+            <div class="restaurant-list" id="restaurantList">
+                <!-- Search results will appear here -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let map;
+        let userLocation = null;
+        let userMarker = null;
+        let watchId = null;
+        let restaurantMarkers = [];
+        let isSheetExpanded = false;
+        
+        // Sample restaurants - in production, load from your full dataset
+        const restaurants = [
+            {
+                id: '1',
+                name: 'Shack Fuyu',
+                latitude: 51.513878,
+                longitude: -0.130188,
+                cuisine: 'Japanese',
+                description: 'Modern Japanese small plates recommended by Ed Gamble, James Acaster, and Kumail Nanjiani.',
+                city: 'london'
+            },
+            {
+                id: '2',
+                name: 'Trullo',
+                latitude: 51.546312,
+                longitude: -0.101566,
+                cuisine: 'Italian',
+                description: 'Authentic Italian dining recommended by Grace Dent.',
+                city: 'london'
+            },
+            {
+                id: '3',
+                name: "Katz's Delicatessen",
+                latitude: 40.7222411,
+                longitude: -73.9874447,
+                cuisine: 'Jewish Deli',
+                description: 'Legendary NYC deli recommended by Jamie Demetriou and Ed Gamble.',
+                city: 'nyc'
+            }
+        ];
+        
+        // Initialize app
+        function initApp() {
+            // Show location overlay first
+            document.getElementById('locationOverlay').style.display = 'flex';
+        }
+        
+        function requestLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    onLocationSuccess,
+                    onLocationError,
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            } else {
+                alert("Location not supported by this browser.");
+                initMapWithoutLocation();
+            }
+        }
+        
+        function onLocationSuccess(position) {
+            userLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            
+            // Hide location overlay
+            document.getElementById('locationOverlay').style.display = 'none';
+            
+            // Initialize map
+            initMap();
+            
+            // Start watching position
+            startLocationTracking();
+        }
+        
+        function onLocationError(error) {
+            console.warn('Location error:', error);
+            // Hide overlay and show map anyway
+            document.getElementById('locationOverlay').style.display = 'none';
+            initMapWithoutLocation();
+        }
+        
+        function initMap() {
+            map = new maplibregl.Map({
+                container: 'map',
+                style: 'https://api.maptiler.com/maps/0198bc7e-cd9c-7687-af88-2478a66bc2f0/style.json?key=AFesEdDbj0qoq04LDJHD',
+                center: userLocation ? [userLocation.lng, userLocation.lat] : [-0.1180, 51.5230],
+                zoom: userLocation ? 14 : 10,
+                pitch: 0,
+                bearing: 0
+            });
+            
+            map.on('load', function() {
+                addRestaurantMarkers();
+                if (userLocation) {
+                    addUserMarker();
+                }
+            });
+            
+            // Hide map controls for cleaner mobile interface
+            map.addControl(new maplibregl.NavigationControl(), 'bottom-right');
+        }
+        
+        function initMapWithoutLocation() {
+            userLocation = { lat: 51.5230, lng: -0.1180 }; // Default to London
+            initMap();
+        }
+        
+        function startLocationTracking() {
+            if ("geolocation" in navigator) {
+                watchId = navigator.geolocation.watchPosition(
+                    updateUserLocation,
+                    (error) => console.warn('Location tracking error:', error),
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 30000 }
+                );
+            }
+        }
+        
+        function updateUserLocation(position) {
+            userLocation = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            
+            if (userMarker) {
+                userMarker.setLngLat([userLocation.lng, userLocation.lat]);
+            } else if (map) {
+                addUserMarker();
+            }
+        }
+        
+        function addUserMarker() {
+            if (!userLocation || !map) return;
+            
+            const el = document.createElement('div');
+            el.className = 'user-marker';
+            
+            userMarker = new maplibregl.Marker({ element: el })
+                .setLngLat([userLocation.lng, userLocation.lat])
+                .addTo(map);
+        }
+        
+        function centerOnUser() {
+            if (userLocation && map) {
+                map.flyTo({
+                    center: [userLocation.lng, userLocation.lat],
+                    zoom: 15,
+                    duration: 1000
+                });
+                
+                const btn = document.getElementById('locationBtn');
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 200);
+            }
+        }
+        
+        function addRestaurantMarkers() {
+            restaurants.forEach(restaurant => {
+                const markerEl = document.createElement('div');
+                markerEl.className = 'restaurant-marker';
+                
+                const cuisineType = restaurant.cuisine.toLowerCase().replace(/[^a-z]/g, '');
+                const iconEl = document.createElement('div');
+                iconEl.className = `marker-icon cuisine-${cuisineType}`;
+                
+                markerEl.appendChild(iconEl);
+                
+                const popupContent = `
+                    <div class="restaurant-popup">
+                        <div class="popup-restaurant-name">${restaurant.name}</div>
+                        <div class="popup-cuisine">${restaurant.cuisine}</div>
+                        <div class="popup-source-badge">Off Menu Podcast</div>
+                        <div class="popup-description">${restaurant.description}</div>
+                        <div class="popup-actions">
+                            <button class="popup-btn" onclick="navigate(${restaurant.latitude}, ${restaurant.longitude}, '${restaurant.name}')">Navigate</button>
+                        </div>
+                    </div>
+                `;
+                
+                const popup = new maplibregl.Popup({
+                    offset: 25,
+                    closeButton: false
+                }).setHTML(popupContent);
+                
+                const marker = new maplibregl.Marker({
+                    element: markerEl,
+                    anchor: 'center'
+                })
+                    .setLngLat([restaurant.longitude, restaurant.latitude])
+                    .setPopup(popup)
+                    .addTo(map);
+                    
+                restaurantMarkers.push({ marker, restaurant });
+            });
+        }
+        
+        function navigate(lat, lng, name) {
+            const url = `https://maps.apple.com/?q=${encodeURIComponent(name)}&ll=${lat},${lng}`;
+            window.open(url, '_blank');
+        }
+        
+        function toggleSheet() {
+            const sheet = document.getElementById('bottomSheet');
+            isSheetExpanded = !isSheetExpanded;
+            
+            if (isSheetExpanded) {
+                sheet.classList.add('expanded');
+            } else {
+                sheet.classList.remove('expanded');
+            }
+        }
+        
+        function expandSheet() {
+            const sheet = document.getElementById('bottomSheet');
+            sheet.classList.add('expanded');
+            isSheetExpanded = true;
+        }
+        
+        function searchRestaurants(query) {
+            const resultsList = document.getElementById('restaurantList');
+            const defaultContent = document.getElementById('defaultContent');
+            
+            if (!query.trim()) {
+                resultsList.style.display = 'none';
+                defaultContent.style.display = 'block';
+                return;
+            }
+            
+            const filteredRestaurants = restaurants.filter(restaurant => 
+                restaurant.name.toLowerCase().includes(query.toLowerCase()) ||
+                restaurant.cuisine.toLowerCase().includes(query.toLowerCase())
+            );
+            
+            displaySearchResults(filteredRestaurants);
+            defaultContent.style.display = 'none';
+            resultsList.style.display = 'block';
+            expandSheet();
+        }
+        
+        function displaySearchResults(restaurants) {
+            const resultsList = document.getElementById('restaurantList');
+            
+            if (restaurants.length === 0) {
+                resultsList.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No restaurants found</div>';
+                return;
+            }
+            
+            resultsList.innerHTML = restaurants.map(restaurant => {
+                const cuisineType = restaurant.cuisine.toLowerCase().replace(/[^a-z]/g, '');
+                const distance = userLocation ? calculateDistance(userLocation.lat, userLocation.lng, restaurant.latitude, restaurant.longitude) : null;
+                
+                return `
+                    <div class="restaurant-card" onclick="flyToRestaurant(${restaurant.latitude}, ${restaurant.longitude})">
+                        <div class="restaurant-icon marker-icon cuisine-${cuisineType}"></div>
+                        <div class="restaurant-info">
+                            <div class="restaurant-name">${restaurant.name}</div>
+                            <div class="restaurant-details">${restaurant.cuisine} • ${restaurant.city}</div>
+                        </div>
+                        ${distance ? `<div class="restaurant-distance">${distance.toFixed(1)}km</div>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // Radius of the Earth in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+        
+        function flyToRestaurant(lat, lng) {
+            map.flyTo({
+                center: [lng, lat],
+                zoom: 16,
+                duration: 1500
+            });
+            
+            // Close sheet
+            document.getElementById('bottomSheet').classList.remove('expanded');
+            isSheetExpanded = false;
+        }
+        
+        function filterByCity(city) {
+            const filtered = restaurants.filter(r => r.city === city);
+            displaySearchResults(filtered);
+            document.getElementById('defaultContent').style.display = 'none';
+            document.getElementById('restaurantList').style.display = 'block';
+            expandSheet();
+        }
+        
+        function filterByCuisine(cuisine) {
+            const filtered = restaurants.filter(r => r.cuisine.toLowerCase().includes(cuisine));
+            displaySearchResults(filtered);
+            document.getElementById('defaultContent').style.display = 'none';
+            document.getElementById('restaurantList').style.display = 'block';
+            expandSheet();
+        }
+        
+        function toggleMenu() {
+            // Implement menu functionality
+            alert('Menu functionality - add city selector, settings, etc.');
+        }
+        
+        // Initialize app when page loads
+        window.addEventListener('load', initApp);
+        
+        // Handle orientation changes
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                if (map) map.resize();
+            }, 100);
+        });
+    </script>
+</body>
+</html>
