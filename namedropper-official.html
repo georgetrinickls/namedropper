@@ -538,9 +538,203 @@
         .overlay-close:hover {
             background: rgba(255,255,255,0.1);
         }
+
+        /* Hamburger menu */
+        .hamburger-menu {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .hamburger-menu:hover {
+            transform: scale(1.05);
+        }
+        
+        .hamburger {
+            width: 24px;
+            height: 20px;
+            position: relative;
+        }
+        
+        .hamburger span {
+            display: block;
+            position: absolute;
+            height: 3px;
+            width: 100%;
+            background: #333;
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+        
+        .hamburger span:nth-child(1) { top: 0; }
+        .hamburger span:nth-child(2) { top: 8px; }
+        .hamburger span:nth-child(3) { top: 16px; }
+
+        /* Settings menu */
+        .settings-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            z-index: 3000;
+            transition: left 0.3s ease;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.3);
+            overflow-y: auto;
+        }
+
+        .settings-menu.open {
+            left: 0;
+        }
+
+        .settings-header {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .settings-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .settings-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .settings-content {
+            padding: 20px;
+        }
+
+        .setting-item {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .setting-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+
+        .setting-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .setting-description {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            background: #ccc;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #007AFF;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: left 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            left: 24px;
+        }
+
+        .settings-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
     </style>
 </head>
 <body>
+    <!-- Hamburger menu button -->
+    <div class="hamburger-menu" onclick="toggleMenu()">
+        <div class="hamburger">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    </div>
+
+    <!-- Settings menu -->
+    <div class="settings-menu" id="settingsMenu">
+        <button class="settings-close" onclick="toggleMenu()">×</button>
+        <div class="settings-header">
+            <div class="settings-title">Settings</div>
+            <div class="settings-subtitle">Configure your namedropper experience</div>
+        </div>
+        <div class="settings-content">
+            <div class="setting-item">
+                <div class="setting-label">🚇 Show Transport Stations</div>
+                <div class="setting-description">Display tube and train stations in London</div>
+                <div class="toggle-switch active" id="stationToggleMenu" onclick="toggleStationsSetting()"></div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">📍 Precision Notice</div>
+                <div class="setting-description">Show database information banner</div>
+                <div class="toggle-switch" id="precisionToggle" onclick="togglePrecisionNotice()"></div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">🏷️ Restaurant Labels</div>
+                <div class="setting-description">Show restaurant names on markers at high zoom</div>
+                <div class="toggle-switch active" id="labelsToggle" onclick="toggleRestaurantLabels()"></div>
+            </div>
+            
+            <div class="setting-item">
+                <div class="setting-label">🎨 Marker Style</div>
+                <div class="setting-description">Using custom nd-pin.svg markers</div>
+                <div style="font-size: 12px; color: #999; margin-top: 8px;">
+                    Drop SVG files in assets/svg/ folder to customize
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="location-dropdown">
         <div class="dropdown" id="locationDropdown">
             <button class="dropdown-btn" onclick="toggleDropdown()">
@@ -583,13 +777,10 @@
         </div>
     </div>
     
-    <button class="station-toggle" id="stationToggle" onclick="toggleStations()">
-        🚇 Show Stations
+    <button class="station-toggle active" id="stationToggle" onclick="toggleStations()">
+        🚇 Hide Stations
     </button>
     
-    <div class="precision-notice">
-        📍 Official Off Menu database - 667 restaurants with exact coordinates
-    </div>
     
     <!-- Restaurant overlay (hidden by default) -->
     <div class="restaurant-overlay" id="restaurantOverlay">
@@ -12769,7 +12960,7 @@
         let stationMarkers = [];
         let currentCity = 'london';
         let filteredRestaurants = [];
-        let stationsVisible = false;
+        let stationsVisible = true;
         
         // Add markers function
         function addMarkers(city = 'all') {
@@ -13040,6 +13231,73 @@
             }
         }
         
+        // Settings menu functions
+        function toggleMenu() {
+            const menu = document.getElementById('settingsMenu');
+            menu.classList.toggle('open');
+        }
+        
+        function toggleStationsSetting() {
+            const toggle = document.getElementById('stationToggleMenu');
+            const stationBtn = document.getElementById('stationToggle');
+            
+            if (stationsVisible) {
+                // Hide stations
+                removeStationMarkers();
+                toggle.classList.remove('active');
+                stationBtn.textContent = '🚇 Show Stations';
+                stationBtn.classList.remove('active');
+                stationsVisible = false;
+            } else {
+                // Show stations
+                if (currentCity === 'london' || currentCity === 'all') {
+                    addStationMarkers();
+                }
+                toggle.classList.add('active');
+                stationBtn.textContent = '🚇 Hide Stations';
+                stationBtn.classList.add('active');
+                stationsVisible = true;
+            }
+        }
+        
+        function togglePrecisionNotice() {
+            const toggle = document.getElementById('precisionToggle');
+            let notice = document.getElementById('precisionNotice');
+            
+            if (toggle.classList.contains('active')) {
+                // Hide notice
+                if (notice) {
+                    notice.remove();
+                }
+                toggle.classList.remove('active');
+            } else {
+                // Show notice
+                if (!notice) {
+                    notice = document.createElement('div');
+                    notice.id = 'precisionNotice';
+                    notice.className = 'precision-notice';
+                    notice.textContent = '📍 Official Off Menu database - 667 restaurants with exact coordinates';
+                    document.body.appendChild(notice);
+                }
+                toggle.classList.add('active');
+            }
+        }
+        
+        function toggleRestaurantLabels() {
+            const toggle = document.getElementById('labelsToggle');
+            const labels = document.querySelectorAll('.restaurant-label');
+            
+            if (toggle.classList.contains('active')) {
+                // Hide labels
+                labels.forEach(label => label.style.display = 'none');
+                toggle.classList.remove('active');
+            } else {
+                // Show labels
+                labels.forEach(label => label.style.display = 'block');
+                toggle.classList.add('active');
+            }
+        }
+        
         // Dropdown functions
         function toggleDropdown() {
             const dropdown = document.getElementById('locationDropdown');
@@ -13194,6 +13452,7 @@
         // Initialize when map loads
         map.on('load', function() {
             addMarkers('london'); // Start with London view
+            addStationMarkers(); // Show stations by default
             updateZoomClass(); // Set initial zoom class
             
             // Add navigation controls
