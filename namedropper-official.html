@@ -18,110 +18,6 @@
             width: 100vw; 
         }
         
-        .location-dropdown {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-        }
-        
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .dropdown-btn {
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            min-width: 160px;
-            justify-content: space-between;
-        }
-        
-        .dropdown-btn:hover {
-            background: #ff5252;
-            transform: translateY(-1px);
-        }
-        
-        .dropdown-btn::after {
-            content: '▼';
-            font-size: 10px;
-            transition: transform 0.2s;
-        }
-        
-        .dropdown.open .dropdown-btn::after {
-            transform: rotate(180deg);
-        }
-        
-        .dropdown-content {
-            display: none;
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: white;
-            min-width: 180px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            border-radius: 8px;
-            overflow: hidden;
-            margin-top: 4px;
-        }
-        
-        .dropdown.open .dropdown-content {
-            display: block;
-            animation: slideDown 0.2s ease;
-        }
-        
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        .dropdown-item {
-            display: block;
-            width: 100%;
-            padding: 12px 16px;
-            border: none;
-            background: none;
-            text-align: left;
-            cursor: pointer;
-            font-size: 14px;
-            color: #333;
-            transition: background-color 0.2s;
-            border-bottom: 1px solid #f0f0f0;
-        }
-        
-        .dropdown-item:last-child {
-            border-bottom: none;
-        }
-        
-        .dropdown-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .dropdown-item.active {
-            background-color: #ff6b6b;
-            color: white;
-        }
-        
-        .dropdown-item.active:hover {
-            background-color: #ff5252;
-        }
         
         
         
@@ -338,31 +234,211 @@
             filter: drop-shadow(0 3px 12px rgba(0,0,0,0.5)); 
         }
 
-        .search-box {
+        /* Search Sheet Interface - Full Screen */
+        .search-sheet {
             position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
+            bottom: 0;
+            left: 0;
+            right: 0;
             background: white;
-            padding: 12px 16px;
-            border-radius: 25px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            width: 90%;
-            max-width: 400px;
+            z-index: 1000;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -4px 30px rgba(0,0,0,0.2);
+            transform: translateY(calc(100% - 80px));
+            transition: transform 0.3s ease;
+            max-height: 70vh;
+        }
+        
+        .search-sheet.expanded {
+            transform: translateY(0);
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 100vh;
+            height: 100vh;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        
+        .search-sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: #ddd;
+            border-radius: 2px;
+            margin: 12px auto 0;
+            cursor: pointer;
+        }
+        
+        .search-sheet.expanded .search-sheet-handle {
+            display: none;
+        }
+        
+        .search-header {
+            padding: 20px 20px 0;
+            padding-top: max(20px, env(safe-area-inset-top));
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .search-back-button {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: #f0f0f0;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .search-sheet.expanded .search-back-button {
+            display: flex;
+        }
+        
+        .search-back-button:hover {
+            background: #e0e0e0;
+        }
+        
+        .search-container {
+            padding: 16px 20px 0;
+            flex: 1;
+        }
+        
+        .search-sheet.expanded .search-container {
+            padding: 0;
         }
 
         .search-input {
             border: none;
             outline: none;
-            padding: 8px 16px;
+            padding: 12px 16px;
             font-size: 16px;
             width: 100%;
-            background: transparent;
+            background: #f5f5f5;
+            border-radius: 12px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        .search-input:focus {
+            background: #f0f0f0;
         }
 
         .search-input::placeholder {
             color: #999;
+        }
+        
+        .search-sheet-content {
+            padding: 0 20px 30px;
+            overflow-y: auto;
+            max-height: calc(70vh - 120px);
+        }
+        
+        .search-sheet.expanded .search-sheet-content {
+            padding: 20px 20px 30px;
+            max-height: calc(100vh - 120px);
+            padding-bottom: max(30px, env(safe-area-inset-bottom) + 20px);
+        }
+        
+        .city-shortcuts {
+            margin-bottom: 24px;
+        }
+        
+        .shortcuts-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 12px;
+        }
+        
+        .city-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+        }
+        
+        .city-shortcut {
+            background: #f8f9fa;
+            border: none;
+            padding: 12px 8px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .city-shortcut:hover {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+        
+        .city-shortcut.active {
+            background: #007AFF;
+            color: white;
+        }
+        
+        .suggestions-section {
+            margin-bottom: 20px;
+        }
+        
+        .suggestions-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 12px;
+        }
+        
+        .restaurant-suggestion {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .restaurant-suggestion:hover {
+            background: #f8f9fa;
+            margin: 0 -20px;
+            padding: 12px 20px;
+        }
+        
+        .restaurant-suggestion:last-child {
+            border-bottom: none;
+        }
+        
+        .suggestion-icon {
+            width: 40px;
+            height: 40px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 18px;
+        }
+        
+        .suggestion-info {
+            flex: 1;
+        }
+        
+        .suggestion-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 2px;
+        }
+        
+        .suggestion-details {
+            font-size: 12px;
+            color: #666;
         }
 
         /* Top overlay for restaurant details */
@@ -371,7 +447,7 @@
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(40, 44, 52, 0.95);
+            background: #2F323E;
             color: white;
             z-index: 2000;
             transform: translateY(-100%);
@@ -384,113 +460,333 @@
         }
 
         .overlay-content {
-            padding: 20px;
-            max-width: 600px;
-            margin: 0 auto;
             display: flex;
+            flex-direction: row;
             align-items: center;
-            gap: 16px;
+            padding: 24px 12px;
+            gap: 12px;
+            width: 100%;
+            max-width: 375px;
+            margin: 0 auto;
+            height: 183px;
+            position: relative;
         }
 
         .overlay-icon {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #007AFF;
+            width: 62.48px;
+            height: 72px;
+            flex: none;
+            order: 0;
+            flex-grow: 0;
+            background: transparent;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
-            flex-shrink: 0;
+            position: relative;
         }
 
         .overlay-info {
-            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 0px;
+            gap: 12px;
+            width: 213.52px;
+            height: 126px;
+            flex: none;
+            order: 1;
+            flex-grow: 1;
         }
 
         .overlay-title {
+            width: 213.52px;
+            height: 26px;
+            font-family: 'Gabarito', sans-serif;
+            font-style: normal;
+            font-weight: 700;
             font-size: 22px;
-            font-weight: bold;
-            margin-bottom: 4px;
+            line-height: 26px;
+            color: #FFFFFF;
+            flex: none;
+            order: 0;
+            align-self: stretch;
+            flex-grow: 0;
+            margin: 0;
         }
 
         .overlay-subtitle {
+            width: 213.52px;
+            height: 17px;
+            font-family: 'Gabarito', sans-serif;
+            font-style: normal;
+            font-weight: 400;
             font-size: 14px;
-            opacity: 0.8;
-            margin-bottom: 8px;
+            line-height: 17px;
+            color: #D1D1D1;
+            flex: none;
+            order: 1;
+            align-self: stretch;
+            flex-grow: 0;
+            margin: 0;
         }
 
         .overlay-guest {
-            font-size: 13px;
-            color: #ff6b6b;
-            font-weight: 600;
-            margin-bottom: 6px;
+            width: 213.52px;
+            height: 17px;
+            font-family: 'Gabarito', sans-serif;
+            font-style: normal;
+            font-weight: 700;
+            font-size: 14px;
+            line-height: 17px;
+            color: #FFFFFF;
+            flex: none;
+            order: 0;
+            align-self: stretch;
+            flex-grow: 0;
+            margin: 0;
         }
 
         .overlay-description {
-            font-size: 13px;
-            line-height: 1.4;
-            margin-bottom: 8px;
-            color: #555;
+            width: 213.52px;
+            height: 28px;
+            font-family: 'Gabarito', sans-serif;
+            font-style: normal;
+            font-weight: 400;
+            font-size: 12px;
+            line-height: 14px;
+            color: #D1D1D1;
+            flex: none;
+            order: 1;
+            align-self: stretch;
+            flex-grow: 0;
+            margin: 0;
         }
 
         .overlay-distance {
+            width: 213.52px;
+            height: 14px;
+            font-family: 'Gabarito', sans-serif;
+            font-style: normal;
+            font-weight: 400;
             font-size: 12px;
-            opacity: 0.6;
+            line-height: 14px;
+            color: #FFFFFF;
+            flex: none;
+            order: 2;
+            align-self: stretch;
+            flex-grow: 0;
+            margin: 0;
         }
 
         .overlay-actions {
             display: flex;
-            gap: 8px;
-            flex-shrink: 0;
+            flex-direction: column;
+            align-items: flex-end;
+            padding: 0px;
+            gap: 40px;
+            width: 51px;
+            height: 135px;
+            flex: none;
+            order: 2;
+            align-self: stretch;
+            flex-grow: 0;
+        }
+
+        .overlay-close {
+            width: 24px;
+            height: 24px;
+            flex: none;
+            order: 0;
+            flex-grow: 0;
+            background: transparent;
+            border: none;
+            color: #FDFDFD;
+            cursor: pointer;
+            position: relative;
+            padding: 0;
+        }
+
+        .overlay-close::before,
+        .overlay-close::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 20px;
+            height: 1px;
+            background: #FDFDFD;
+            transform-origin: center;
+        }
+
+        .overlay-close::before {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        .overlay-close::after {
+            transform: translate(-50%, -50%) rotate(-135deg);
         }
 
         .overlay-btn {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
             padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
+            gap: 8px;
+            width: 51px;
+            height: 33px;
+            background: #007CFF;
+            border-radius: 40px;
+            flex: none;
+            order: 1;
+            flex-grow: 0;
+            border: none;
             cursor: pointer;
             transition: all 0.2s;
         }
 
         .overlay-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .overlay-btn.primary {
-            background: #007AFF;
-        }
-
-        .overlay-btn.primary:hover {
             background: #0056CC;
         }
 
-        .overlay-close {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            width: 32px;
-            height: 32px;
+        .overlay-btn-text {
+            width: 19px;
+            height: 17px;
+            font-family: 'Gabarito', sans-serif;
+            font-style: normal;
+            font-weight: 500;
+            font-size: 14px;
+            line-height: 17px;
+            color: #FFFFFF;
+            flex: none;
+            order: 0;
+            flex-grow: 0;
+        }
+
+
+        /* Profile Dropdown */
+        .profile-menu {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        
+        .profile-trigger {
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid #f0f0f0;
+            padding: 6px;
+        }
+        
+        .profile-trigger:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+        }
+        
+        .profile-avatar {
+            width: 100%;
+            height: 100%;
             border-radius: 50%;
+            background: url('./assets/svg/man1.svg') no-repeat center;
+            background-size: cover;
+        }
+        
+        .profile-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            width: 280px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+        
+        .profile-dropdown.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .profile-header {
+            padding: 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .profile-header-avatar {
+            width: 48px;
+            height: 48px;
+            background: url('./assets/svg/man1.svg') no-repeat center;
+            background-size: cover;
+            border-radius: 50%;
+            border: 2px solid #f0f0f0;
+        }
+        
+        .profile-info h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .profile-info p {
+            margin: 2px 0 0;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .profile-menu-section {
+            padding: 12px 0;
+        }
+        
+        .profile-menu-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            cursor: pointer;
             transition: background 0.2s;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
         }
-
-        .overlay-close:hover {
-            background: rgba(255,255,255,0.1);
+        
+        .profile-menu-item:hover {
+            background: #f8f9fa;
         }
-
-        /* Hamburger menu */
+        
+        .profile-menu-item svg,
+        .profile-menu-item .icon {
+            width: 20px;
+            height: 20px;
+            color: #666;
+        }
+        
+        .profile-menu-item span {
+            font-size: 15px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        /* Hamburger menu - moved to left */
         .hamburger-menu {
             position: fixed;
             top: 20px;
@@ -503,7 +799,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -661,6 +957,40 @@
             <span></span>
         </div>
     </div>
+    
+    <!-- Profile Dropdown Menu -->
+    <div class="profile-menu">
+        <div class="profile-trigger" onclick="toggleProfileMenu()">
+            <div class="profile-avatar"></div>
+        </div>
+        <div class="profile-dropdown" id="profileDropdown">
+            <div class="profile-header">
+                <div class="profile-header-avatar"></div>
+                <div class="profile-info">
+                    <h3>Food Explorer</h3>
+                    <p>Off Menu Enthusiast</p>
+                </div>
+            </div>
+            <div class="profile-menu-section">
+                <button class="profile-menu-item" onclick="viewFavorites()">
+                    <div class="icon">❤️</div>
+                    <span>Favorites</span>
+                </button>
+                <button class="profile-menu-item" onclick="viewHistory()">
+                    <div class="icon">🏃</div>
+                    <span>Recently Visited</span>
+                </button>
+                <button class="profile-menu-item" onclick="toggleMenu(); toggleProfileMenu();">
+                    <div class="icon">⚙️</div>
+                    <span>Settings</span>
+                </button>
+                <button class="profile-menu-item" onclick="shareApp()">
+                    <div class="icon">📤</div>
+                    <span>Share App</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Settings menu -->
     <div class="settings-menu" id="settingsMenu">
@@ -711,26 +1041,61 @@
         </div>
     </div>
 
-    <div class="location-dropdown">
-        <div class="dropdown" id="locationDropdown">
-            <button class="dropdown-btn" onclick="toggleDropdown()">
-                <span id="selectedLocation">London (276)</span>
-            </button>
-            <div class="dropdown-content">
-                <button class="dropdown-item active" onclick="selectLocation('london', 'London (276)')">London (276)</button>
-                <button class="dropdown-item" onclick="selectLocation('nyc', 'NYC (55)')">NYC (55)</button>
-                <button class="dropdown-item" onclick="selectLocation('la', 'LA (38)')">LA (38)</button>
-                <button class="dropdown-item" onclick="selectLocation('melbourne', 'Melbourne (19)')">Melbourne (19)</button>
-                <button class="dropdown-item" onclick="selectLocation('paris', 'Paris (8)')">Paris (8)</button>
-                <button class="dropdown-item" onclick="selectLocation('tokyo', 'Tokyo (3)')">Tokyo (3)</button>
-                <button class="dropdown-item" onclick="selectLocation('international', 'International (268)')">International (268)</button>
-                <button class="dropdown-item" onclick="selectLocation('all', 'View All (667)')">View All (667)</button>
+    
+    <!-- Search Sheet -->
+    <div class="search-sheet" id="searchSheet">
+        <div class="search-sheet-handle" onclick="toggleSearchSheet()"></div>
+        <div class="search-header" id="searchHeader" style="display: none;">
+            <button class="search-back-button" onclick="closeSearchSheet()">←</button>
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="Search restaurants..." 
+                       onkeyup="handleSearch(this.value)" onfocus="expandSearchSheet()">
             </div>
         </div>
-    </div>
-    
-    <div class="search-box">
-        <input type="text" class="search-input" placeholder="Search restaurants..." onkeyup="searchRestaurants(this.value)">
+        <div class="search-container" id="defaultSearchContainer">
+            <input type="text" class="search-input" id="searchInputDefault" placeholder="Search restaurants..." 
+                   onkeyup="handleSearch(this.value)" onfocus="expandSearchSheet()">
+        </div>
+        <div class="search-sheet-content" id="searchContent">
+            <!-- City Shortcuts -->
+            <div class="city-shortcuts" id="cityShortcuts">
+                <div class="shortcuts-title">Jump to City</div>
+                <div class="city-grid">
+                    <button class="city-shortcut active" onclick="selectCityFromSheet('london')">
+                        London
+                        <div style="font-size:11px;color:#666;margin-top:2px;">276 places</div>
+                    </button>
+                    <button class="city-shortcut" onclick="selectCityFromSheet('nyc')">
+                        NYC
+                        <div style="font-size:11px;color:#666;margin-top:2px;">55 places</div>
+                    </button>
+                    <button class="city-shortcut" onclick="selectCityFromSheet('la')">
+                        LA
+                        <div style="font-size:11px;color:#666;margin-top:2px;">38 places</div>
+                    </button>
+                    <button class="city-shortcut" onclick="selectCityFromSheet('paris')">
+                        Paris
+                        <div style="font-size:11px;color:#666;margin-top:2px;">24 places</div>
+                    </button>
+                    <button class="city-shortcut" onclick="selectCityFromSheet('tokyo')">
+                        Tokyo
+                        <div style="font-size:11px;color:#666;margin-top:2px;">18 places</div>
+                    </button>
+                    <button class="city-shortcut" onclick="selectCityFromSheet('melbourne')">
+                        Melbourne
+                        <div style="font-size:11px;color:#666;margin-top:2px;">12 places</div>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Restaurant Suggestions -->
+            <div class="suggestions-section" id="suggestionsSection">
+                <div class="suggestions-title">Popular in London</div>
+                <div id="restaurantSuggestions">
+                    <!-- Suggestions will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
     </div>
     
     
@@ -739,18 +1104,24 @@
     
     <!-- Restaurant overlay (hidden by default) -->
     <div class="restaurant-overlay" id="restaurantOverlay">
-        <button class="overlay-close" onclick="hideRestaurantOverlay()">×</button>
         <div class="overlay-content">
             <div class="overlay-icon" id="overlayIcon">🍽️</div>
             <div class="overlay-info">
-                <div class="overlay-title" id="overlayTitle">Restaurant Name</div>
-                <div class="overlay-subtitle" id="overlaySubtitle">Cuisine • Location</div>
-                <div class="overlay-guest" id="overlayGuest">Guest Name</div>
-                <div class="overlay-description" id="overlayDescription">Restaurant description will appear here</div>
-                <div class="overlay-distance" id="overlayDistance">290m away</div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="overlay-title" id="overlayTitle">Restaurant Name</div>
+                    <div class="overlay-subtitle" id="overlaySubtitle">Cuisine • Location</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div class="overlay-guest" id="overlayGuest">Guest Name</div>
+                    <div class="overlay-description" id="overlayDescription">Restaurant description will appear here</div>
+                    <div class="overlay-distance" id="overlayDistance">290m away</div>
+                </div>
             </div>
             <div class="overlay-actions">
-                <button class="overlay-btn primary" onclick="navigateToRestaurant()">Go</button>
+                <button class="overlay-close" onclick="hideRestaurantOverlay()"></button>
+                <button class="overlay-btn" onclick="navigateToRestaurant()">
+                    <span class="overlay-btn-text">Go</span>
+                </button>
             </div>
         </div>
     </div>
@@ -13294,93 +13665,193 @@
         }
 
         // Search function
-        function searchRestaurants(query) {
-            if (!query) {
-                addMarkers(currentCity);
+        // Search Sheet Variables
+        let isSearchSheetExpanded = false;
+        
+        function toggleSearchSheet() {
+            const sheet = document.getElementById('searchSheet');
+            isSearchSheetExpanded = !isSearchSheetExpanded;
+            
+            if (isSearchSheetExpanded) {
+                expandSearchSheetToFullScreen();
+            } else {
+                closeSearchSheet();
+            }
+        }
+        
+        function expandSearchSheetToFullScreen() {
+            const sheet = document.getElementById('searchSheet');
+            const header = document.getElementById('searchHeader');
+            const defaultContainer = document.getElementById('defaultSearchContainer');
+            
+            sheet.classList.add('expanded');
+            header.style.display = 'flex';
+            defaultContainer.style.display = 'none';
+            isSearchSheetExpanded = true;
+            populateRestaurantSuggestions();
+            
+            // Focus on the search input in the header
+            document.getElementById('searchInput').focus();
+        }
+        
+        function closeSearchSheet() {
+            const sheet = document.getElementById('searchSheet');
+            const header = document.getElementById('searchHeader');
+            const defaultContainer = document.getElementById('defaultSearchContainer');
+            
+            sheet.classList.remove('expanded');
+            header.style.display = 'none';
+            defaultContainer.style.display = 'block';
+            isSearchSheetExpanded = false;
+            
+            // Clear search inputs
+            document.getElementById('searchInput').value = '';
+            document.getElementById('searchInputDefault').value = '';
+            document.getElementById('searchInput').blur();
+            document.getElementById('searchInputDefault').blur();
+        }
+        
+        function expandSearchSheet() {
+            if (!isSearchSheetExpanded) {
+                expandSearchSheetToFullScreen();
+            }
+        }
+        
+        function selectCityFromSheet(cityKey) {
+            // Update active city shortcut
+            document.querySelectorAll('.city-shortcut').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Change to selected city
+            selectLocation(cityKey, getCityDisplayName(cityKey));
+            
+            // Update suggestions
+            populateRestaurantSuggestions(cityKey);
+            
+            // Close search sheet after selection
+            setTimeout(() => {
+                toggleSearchSheet();
+            }, 300);
+        }
+        
+        function getCityDisplayName(cityKey) {
+            const cityNames = {
+                'london': 'London',
+                'nyc': 'NYC', 
+                'la': 'LA',
+                'paris': 'Paris',
+                'tokyo': 'Tokyo',
+                'melbourne': 'Melbourne'
+            };
+            return cityNames[cityKey] || cityKey;
+        }
+        
+        function populateRestaurantSuggestions(cityFilter = null) {
+            const targetCity = cityFilter || currentCity;
+            const cityTitleCase = getCityDisplayName(targetCity);
+            
+            // Get restaurants for the current city
+            const filteredRestaurants = targetCity === 'all' 
+                ? restaurants 
+                : restaurants.filter(r => r.city === cityTitleCase);
+                
+            // Get top 8 popular restaurants
+            const suggestions = filteredRestaurants.slice(0, 8);
+            
+            const suggestionsContainer = document.getElementById('restaurantSuggestions');
+            const suggestionsTitle = document.querySelector('.suggestions-title');
+            
+            // Update title
+            suggestionsTitle.textContent = `Popular in ${cityTitleCase}`;
+            
+            // Populate suggestions
+            suggestionsContainer.innerHTML = suggestions.map(restaurant => `
+                <div class="restaurant-suggestion" onclick="selectRestaurantFromSuggestion('${restaurant.id}')">
+                    <div class="suggestion-icon">🍽️</div>
+                    <div class="suggestion-info">
+                        <div class="suggestion-name">${restaurant.name}</div>
+                        <div class="suggestion-details">${restaurant.city} • Featured by ${restaurant.sourceDetails.guestName}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function selectRestaurantFromSuggestion(restaurantId) {
+            const restaurant = restaurants.find(r => r.id === restaurantId);
+            if (restaurant) {
+                // Close search sheet
+                toggleSearchSheet();
+                
+                // Fly to restaurant and show overlay
+                map.flyTo({
+                    center: [restaurant.longitude, restaurant.latitude],
+                    zoom: 16,
+                    duration: 1500
+                });
+                
+                // Show restaurant overlay after animation
+                setTimeout(() => {
+                    showRestaurantOverlay(restaurant);
+                }, 1000);
+            }
+        }
+        
+        function handleSearch(query) {
+            // Sync both search inputs
+            document.getElementById('searchInput').value = query;
+            document.getElementById('searchInputDefault').value = query;
+            
+            // Expand to full screen when user starts typing
+            if (query.trim() && !isSearchSheetExpanded) {
+                expandSearchSheetToFullScreen();
+            }
+            
+            if (!query.trim()) {
+                // Show city shortcuts and suggestions when no query
+                document.getElementById('cityShortcuts').style.display = 'block';
+                document.getElementById('suggestionsSection').style.display = 'block';
+                populateRestaurantSuggestions();
                 return;
             }
-
-            // Clear existing markers
-            markers.forEach(marker => marker.remove());
-            markers = [];
-
-            // Filter restaurants by search query
+            
+            // Hide shortcuts when searching
+            document.getElementById('cityShortcuts').style.display = 'none';
+            document.getElementById('suggestionsSection').style.display = 'block';
+            
+            // Filter restaurants by search query and show in suggestions
             const searchResults = restaurants.filter(restaurant => 
                 restaurant.name.toLowerCase().includes(query.toLowerCase()) ||
-                restaurant.cuisine.toLowerCase().includes(query.toLowerCase()) ||
-                restaurant.address.toLowerCase().includes(query.toLowerCase()) ||
+                restaurant.city.toLowerCase().includes(query.toLowerCase()) ||
                 restaurant.sourceDetails.guestName.toLowerCase().includes(query.toLowerCase())
             );
-
-            searchResults.forEach(restaurant => {
-                // Create custom marker element with name label
-                const markerEl = document.createElement('div');
-                markerEl.className = 'restaurant-marker';
-                
-                // Get cuisine type for styling
-                
-                // Create marker icon
-                const iconEl = document.createElement('div');
-                iconEl.className = 'marker-icon';
-                
-                // Create restaurant name label
-                const labelEl = document.createElement('div');
-                labelEl.className = 'restaurant-label';
-                labelEl.textContent = restaurant.name;
-                
-                // Append icon and label to marker
-                markerEl.appendChild(iconEl);
-                markerEl.appendChild(labelEl);
-                
-                // Create popup content
-                const popupContent = `
-                    <div class="restaurant-popup">
-                        <div class="restaurant-name">${restaurant.name}</div>
-                        <div class="restaurant-location">${restaurant.city} • ${restaurant.priceRange}</div>
-                        <div class="source-badge">Off Menu Podcast</div>
-                        <div class="restaurant-description">${restaurant.description}</div>
-                        <div class="guest-info">
-                            <strong>Featured by:</strong> ${restaurant.sourceDetails.guestName}
-                        </div>
-                        <div class="restaurant-actions">
-                            <button class="action-btn" onclick="navigate(${restaurant.latitude}, ${restaurant.longitude}, '${restaurant.name}')">Go</button>
-                            ${restaurant.phoneNumber ? `<button class="action-btn" onclick="window.open('tel:${restaurant.phoneNumber}')">Call</button>` : ''}
-                            ${restaurant.website ? `<button class="action-btn" onclick="window.open('${restaurant.website}', '_blank')">Website</button>` : ''}
-                        </div>
-                    </div>
-                `;
-                
-                // Add click event to show overlay
-                markerEl.addEventListener('click', () => {
-                    showRestaurantOverlay(restaurant);
-                });
-                
-                // Create popup (for right-click or details)
-                const popup = new maplibregl.Popup({
-                    offset: 25,
-                    closeButton: false
-                }).setHTML(popupContent);
-                
-                // Create marker with proper anchor
-                const marker = new maplibregl.Marker({
-                    element: markerEl,
-                    anchor: 'center'
-                })
-                    .setLngLat([restaurant.longitude, restaurant.latitude])
-                    .addTo(map);
-                    
-                markers.push(marker);
-            });
-
-
-            // Fit map to show all search results
-            if (searchResults.length > 0) {
-                const bounds = new maplibregl.LngLatBounds();
-                searchResults.forEach(restaurant => {
-                    bounds.extend([restaurant.longitude, restaurant.latitude]);
-                });
-                map.fitBounds(bounds, { padding: 50 });
+            
+            const suggestionsContainer = document.getElementById('restaurantSuggestions');
+            const suggestionsTitle = document.querySelector('.suggestions-title');
+            
+            suggestionsTitle.textContent = `Found ${searchResults.length} results`;
+            
+            if (searchResults.length === 0) {
+                suggestionsContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: #666;">No restaurants found</div>';
+                return;
             }
+            
+            // Show search results in suggestions
+            suggestionsContainer.innerHTML = searchResults.slice(0, 10).map(restaurant => `
+                <div class="restaurant-suggestion" onclick="selectRestaurantFromSuggestion('${restaurant.id}')">
+                    <div class="suggestion-icon">🍽️</div>
+                    <div class="suggestion-info">
+                        <div class="suggestion-name">${restaurant.name}</div>
+                        <div class="suggestion-details">${restaurant.city} • Featured by ${restaurant.sourceDetails.guestName}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function searchRestaurants(query) {
+            // Legacy function - now handled by handleSearch
+            handleSearch(query);
         }
         
         // Navigation function
@@ -13404,7 +13875,7 @@
             
             // Update overlay icon
             const overlayIcon = document.getElementById('overlayIcon');
-            overlayIcon.textContent = '🍽️'; // Generic restaurant icon
+            overlayIcon.innerHTML = '<img src="assets/svg/man1.svg" style="width: 100%; height: 100%; object-fit: contain;" alt="Restaurant icon">';
             
             // Show overlay
             const overlay = document.getElementById('restaurantOverlay');
@@ -13437,7 +13908,54 @@
         function toggleMenu() {
             const menu = document.getElementById('settingsMenu');
             menu.classList.toggle('open');
+            // Close profile dropdown if open
+            const profileDropdown = document.getElementById('profileDropdown');
+            if (profileDropdown.classList.contains('active')) {
+                profileDropdown.classList.remove('active');
+            }
         }
+        
+        // Profile dropdown functionality
+        function toggleProfileMenu() {
+            const dropdown = document.getElementById('profileDropdown');
+            dropdown.classList.toggle('active');
+        }
+        
+        function viewFavorites() {
+            alert('Favorites feature coming soon! 💕');
+            toggleProfileMenu();
+        }
+        
+        function viewHistory() {
+            alert('Recently visited feature coming soon! 📍');
+            toggleProfileMenu();
+        }
+        
+        function shareApp() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Namedropper - Off Menu Restaurants',
+                    text: 'Discover restaurants recommended by your favorite comedians!',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback for browsers that don't support Web Share API
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    alert('Link copied to clipboard! 📋');
+                });
+            }
+            toggleProfileMenu();
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const profileMenu = document.querySelector('.profile-menu');
+            const profileDropdown = document.getElementById('profileDropdown');
+            
+            if (!profileMenu.contains(event.target) && profileDropdown.classList.contains('active')) {
+                profileDropdown.classList.remove('active');
+            }
+        });
         
         // Transport type visibility state
         let transportVisibility = {
@@ -13508,24 +14026,8 @@
         
         
         
-        // Dropdown functions
-        function toggleDropdown() {
-            const dropdown = document.getElementById('locationDropdown');
-            dropdown.classList.toggle('open');
-        }
-        
+        // Location selection function
         function selectLocation(city, displayName) {
-            // Update selected location display
-            document.getElementById('selectedLocation').textContent = displayName;
-            
-            // Update active dropdown item
-            document.querySelectorAll('.dropdown-item').forEach(item => {
-                item.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Close dropdown
-            document.getElementById('locationDropdown').classList.remove('open');
             
             // Update map and markers
             currentCity = city;
@@ -13547,13 +14049,6 @@
             }
         }
         
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            const dropdown = document.getElementById('locationDropdown');
-            if (!dropdown.contains(event.target)) {
-                dropdown.classList.remove('open');
-            }
-        });
         
         // Station management functions
         // Function to determine station type based on networks
@@ -13687,6 +14182,9 @@
             addMarkers('london'); // Start with London view
             addStationMarkers(); // Show stations by default
             updateZoomClass(); // Set initial zoom class
+            
+            // Initialize search sheet with suggestions
+            populateRestaurantSuggestions();
             
             // Add navigation controls
             map.addControl(new maplibregl.NavigationControl());
