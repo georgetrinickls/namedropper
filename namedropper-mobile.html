@@ -157,6 +157,38 @@
         .marker-icon.cuisine-american { filter: hue-rotate(180deg) drop-shadow(0 2px 10px rgba(0,0,0,0.4)); }
         .marker-icon.cuisine-thai { filter: hue-rotate(30deg) saturate(1.2) drop-shadow(0 2px 10px rgba(0,0,0,0.4)); }
         
+        /* Transport station markers */
+        .station-marker {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            z-index: 90;
+        }
+        
+        .station-icon {
+            width: 20px;
+            height: 20px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+            filter: drop-shadow(0 1px 4px rgba(0,0,0,0.4));
+            transition: all 0.2s ease;
+            margin-bottom: 2px;
+        }
+        
+        .station-icon.tube {
+            background-image: url('./assets/svg/tube.svg');
+        }
+        
+        .station-icon.train {
+            background-image: url('./assets/svg/train.svg');
+        }
+        
+        .station-icon.bus {
+            background-image: url('./assets/svg/bus.svg');
+        }
+        
         /* Bottom sheet */
         .bottom-sheet {
             position: fixed;
@@ -642,7 +674,7 @@
                         <div class="popup-source-badge">Off Menu Podcast</div>
                         <div class="popup-description">${restaurant.description}</div>
                         <div class="popup-actions">
-                            <button class="popup-btn" onclick="navigate(${restaurant.latitude}, ${restaurant.longitude}, '${restaurant.name}')">Navigate</button>
+                            <button class="popup-btn" onclick="navigate(${restaurant.latitude}, ${restaurant.longitude}, '${restaurant.name}')">Go</button>
                         </div>
                     </div>
                 `;
