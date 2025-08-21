@@ -236,14 +236,18 @@
 
         /* Map Container */
         #map {
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            width: 100%;
+            width: 100vw;
             height: 100vh;
             z-index: 1;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
 
         /* Search Sheet Interface - Full Screen */
@@ -13723,6 +13727,14 @@
             style: 'https://api.maptiler.com/maps/0198bc7e-cd9c-7687-af88-2478a66bc2f0/style.json?key=AFesEdDbj0qoq04LDJHD',
             center: cityCoordinates.london.center,
             zoom: cityCoordinates.london.zoom
+        });
+
+        // Force map resize on load to fix display issues
+        map.on('load', function() {
+            setTimeout(() => {
+                map.resize();
+                console.log('Map loaded and resized');
+            }, 100);
         });
         
         let markers = [];
