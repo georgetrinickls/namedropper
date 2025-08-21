@@ -664,6 +664,64 @@
             flex-grow: 0;
         }
 
+        /* User Location Arrow (Waze-style) */
+        .user-location-arrow {
+            position: relative;
+            width: 30px;
+            height: 30px;
+            z-index: 1000;
+        }
+
+        .location-dot {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arrow-pointer {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .arrow-pointer svg {
+            transition: transform 0.3s ease-out;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+
+        /* Pulse animation for better visibility */
+        @keyframes locationPulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.4;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+        }
+
+        .user-location-arrow::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(74, 144, 226, 0.2);
+            animation: locationPulse 2s infinite;
+            z-index: -1;
+        }
 
         /* Profile Dropdown */
         .profile-menu {
@@ -14186,6 +14244,9 @@
             // Initialize search sheet with suggestions
             populateRestaurantSuggestions();
             
+            // Add user location tracking with Waze-style arrow
+            addUserLocationTracking();
+            
         });
         
         // Function to hide base map transport icons
@@ -14217,6 +14278,148 @@
         
         // Update zoom class when map zoom changes
         map.on('zoom', updateZoomClass);
+        
+        // User location tracking with Waze-style directional arrow
+        let userLocationMarker = null;
+        let watchId = null;
+        let hasInitiallyZoomed = false;
+        
+        function addUserLocationTracking() {
+            if (!navigator.geolocation) {
+                console.log('Geolocation not supported');
+                return;
+            }
+            
+            // Options for geolocation
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 1000
+            };
+            
+            // Get initial position immediately and zoom to it
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    updateUserLocation(position);
+                    // Zoom to user location on first load
+                    if (!hasInitiallyZoomed) {
+                        const { latitude, longitude } = position.coords;
+                        map.flyTo({
+                            center: [longitude, latitude],
+                            zoom: 15,
+                            duration: 2000
+                        });
+                        hasInitiallyZoomed = true;
+                    }
+                },
+                handleLocationError,
+                options
+            );
+            
+            // Continue watching user position for updates
+            watchId = navigator.geolocation.watchPosition(
+                updateUserLocation,
+                handleLocationError,
+                options
+            );
+        }
+        
+        function updateUserLocation(position) {
+            const { latitude, longitude, heading } = position.coords;
+            const userCoords = [longitude, latitude];
+            
+            // Create or update user location marker
+            if (userLocationMarker) {
+                userLocationMarker.setLngLat(userCoords);
+            } else {
+                // Create custom Waze-style arrow element
+                const arrowEl = createLocationArrow();
+                
+                userLocationMarker = new maplibregl.Marker(arrowEl)
+                    .setLngLat(userCoords)
+                    .addTo(map);
+            }
+            
+            // Update arrow direction if heading is available
+            if (heading !== null && heading !== undefined) {
+                updateArrowDirection(heading);
+            }
+        }
+        
+        function createLocationArrow() {
+            const el = document.createElement('div');
+            el.className = 'user-location-arrow';
+            el.innerHTML = `
+                <div class="location-dot">
+                    <div class="arrow-pointer">
+                        <svg width="30" height="30" viewBox="0 0 30 30" style="transform-origin: center;">
+                            <defs>
+                                <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#4A90E2;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#2E5BBA;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <!-- Outer glow -->
+                            <circle cx="15" cy="15" r="12" fill="rgba(74, 144, 226, 0.3)" />
+                            <!-- Main circle -->
+                            <circle cx="15" cy="15" r="8" fill="url(#arrowGradient)" stroke="white" stroke-width="2" />
+                            <!-- Direction arrow -->
+                            <polygon points="15,6 19,14 15,12 11,14" fill="white" />
+                        </svg>
+                    </div>
+                </div>
+            `;
+            return el;
+        }
+        
+        function updateArrowDirection(heading) {
+            if (userLocationMarker) {
+                const arrowElement = userLocationMarker.getElement();
+                const svg = arrowElement.querySelector('svg');
+                if (svg) {
+                    svg.style.transform = `rotate(${heading}deg)`;
+                }
+            }
+        }
+        
+        function handleLocationError(error) {
+            console.warn('Geolocation error:', error);
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    console.log('User denied location access');
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    console.log('Location information unavailable');
+                    break;
+                case error.TIMEOUT:
+                    console.log('Location request timed out');
+                    break;
+            }
+        }
+        
+        // Add device orientation listener for compass heading (iOS/Android)
+        if (window.DeviceOrientationEvent) {
+            window.addEventListener('deviceorientationabsolute', function(event) {
+                if (event.alpha !== null) {
+                    updateArrowDirection(360 - event.alpha); // Convert to map heading
+                }
+            }, true);
+            
+            // Fallback for older devices
+            window.addEventListener('deviceorientation', function(event) {
+                if (event.alpha !== null && !event.absolute) {
+                    updateArrowDirection(360 - event.alpha);
+                }
+            }, true);
+        }
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+        });
+        
     </script>
 </body>
 </html>
